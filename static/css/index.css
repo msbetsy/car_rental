@@ -1,0 +1,90 @@
+body{
+    font-size: 20px;
+    text-align: center;
+    line-height: 1.6;
+    font-family: 'Abel', sans-serif;
+
+}
+.colored-section{
+    background-color: #7d5a5a;
+    color: #faf2f2;
+}
+.contact-form{
+padding: 5% 20%;
+}
+
+.inside-text-section{
+padding:0 10%;
+}
+.form-group{
+padding: 10px;
+}
+.white-section{
+    background-color: #f3e1e1;
+    color: #212529;
+}
+
+.contact_img{
+    transform: rotate(0deg);
+}
+
+.image{
+    float: left;
+    width:  840px;
+    height: 560px;
+    object-fit: cover;
+}
+
+
+.container-advantages{
+    padding: 2rem 0 1.3rem;
+}
+.container-fluid{
+padding: 0;
+}
+#title .fixed-top{
+padding: 0 0 0 10px;
+
+}
+
+.title-row{
+padding: 0;
+}
+.row{
+margin: 0px
+}
+
+/* Navigation Bar */
+
+.navbar-expand-lg{
+    padding: 0 0 0 0;
+}
+
+.navbar-light{
+    background-color: #f3e1e1;
+}
+#footer p{
+padding-top: 7px;
+}
+.big-heading{
+padding: 100px 0 0 0;
+font-family: 'Akaya Kanadaka', cursive;
+font-size: 4.5rem;
+line-height: 1.8;
+letter-spacing: 0.9rem;
+}
+.icon{
+padding: 0 0 30px;
+}
+.icon:hover {
+  color: #900c3f;
+}
+.social-icon:hover {
+  color: #900c3f;
+}
+.social-icon{
+    margin: 5px 10px;
+}
+#footer{
+padding: 1.7rem 0 0.2rem ;
+}
