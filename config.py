@@ -7,7 +7,7 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 class Config:
     """Class contains general application configuration settings.
     """
-    SECRET_KEY = os.environ.get("SECRET_KEY_CAR")
+    SECRET_KEY = os.environ.get("SECRET_KEY_CAR") or 'sjk897JH7KH65#(@&'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     @staticmethod
