@@ -30,7 +30,7 @@
 
         <nav class="navbar navbar-expand-lg navbar-light fixed-top">
 
-            <a class="navbar-brand" href="{{ url_for('.index')}}">Carcall</a>
+            <a class="navbar-brand" href="{{ url_for('main.index')}}">Carcall</a>
 
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarTitleContent">
                 <span class="navbar-toggler-icon"></span>
@@ -46,30 +46,30 @@
                             About
                         </a>
                         <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                            <a class="dropdown-item" href="{{ url_for('.show_news')}}">News</a>
-                            <a class="dropdown-item" href="{{ url_for('.show_models')}}">Car Models</a>
-                            <a class="dropdown-item" href="{{ url_for('.show_opinions')}}">Opinions</a>
+                            <a class="dropdown-item" href="{{ url_for('main.show_news')}}">News</a>
+                            <a class="dropdown-item" href="{{ url_for('main.show_models')}}">Car Models</a>
+                            <a class="dropdown-item" href="{{ url_for('main.show_opinions')}}">Opinions</a>
                         </div>
                     </li>
 
                     {% if not current_user.is_authenticated: %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('.register')}}">Register</a>
+                        <a class="nav-link" href="{{ url_for('auth.register')}}">Register</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('.login')}}">Log In</a>
+                        <a class="nav-link" href="{{ url_for('auth.login')}}">Log In</a>
                     </li>
                     {% else: %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('.show_user')}}">My account</a>
+                        <a class="nav-link" href="{{ url_for('auth.show_user')}}">My account</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('.logout')}}">Logout</a>
+                        <a class="nav-link" href="{{ url_for('auth.logout')}}">Logout</a>
                     </li>
                     {% endif %}
 
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('.contact')}}">Contact</a>
+                        <a class="nav-link" href="{{ url_for('main.contact')}}">Contact</a>
                     </li>
                 </ul>
 
