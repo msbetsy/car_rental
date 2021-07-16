@@ -2,6 +2,7 @@
 from flask import render_template
 from flask_login import current_user
 from . import main
+from .forms import ContactForm
 
 
 @main.route('/', methods=['GET', 'POST'])
@@ -11,7 +12,10 @@ def index():
 
 @main.route("/contact", methods=["GET", "POST"])
 def contact():
-    return render_template("contact.html", current_user=current_user)
+    form = ContactForm()
+    if form.validate_on_submit():
+        return render_template("contact.html", form=form, success=True, current_user=current_user)
+    return render_template("contact.html", form=form, current_user=current_user)
 
 
 @main.route("/news")
