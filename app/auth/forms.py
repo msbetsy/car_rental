@@ -1,6 +1,6 @@
 """This module stores application forms for authorization."""
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField
+from wtforms import StringField, PasswordField, SubmitField, BooleanField
 from wtforms.validators import DataRequired, Length, Email, EqualTo
 from wtforms import ValidationError
 from ..models import User
@@ -28,3 +28,12 @@ class RegisterForm(FlaskForm):
         """
         if User.query.filter_by(email=field.data.lower()).first():
             raise ValidationError('Email exists.')
+
+
+class LoginForm(FlaskForm):
+    """Class used for log in user.
+    """
+    email = StringField("Email: ", validators=[DataRequired(), Length(1, 80), Email()])
+    password = PasswordField("Password", validators=[DataRequired()])
+    remember_user = BooleanField('Remember me')
+    submit = SubmitField("Log in")

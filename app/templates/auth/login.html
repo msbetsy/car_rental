@@ -10,3 +10,18 @@
 {% block big_heading %}
     Welcome back!
 {% endblock %}
+
+{% block main_text %}
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <p>{{ message }}</p>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    {% if not current_user.is_authenticated %}
+        {{ wtf.quick_form(form, novalidate=True, button_map={"submit": "secondary"}) }}
+    {% endif %}
+
+{% endblock %}

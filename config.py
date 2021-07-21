@@ -1,5 +1,6 @@
 """This module stores application configuration settings."""
 import os
+from datetime import timedelta
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
@@ -9,6 +10,8 @@ class Config:
     """
     SECRET_KEY = os.environ.get("SECRET_KEY_CAR") or 'sjk897JH7KH65#(@&'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    REMEMBER_COOKIE_DURATION = timedelta(minutes=10)
+    PERMANENT_SESSION_LIFETIME = timedelta(minutes=60)
 
     @staticmethod
     def init_app(app):
