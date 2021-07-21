@@ -12,7 +12,11 @@ def index():
 
 @main.route("/contact", methods=["GET", "POST"])
 def contact():
-    form = ContactForm()
+    if current_user.is_anonymous:
+        form = ContactForm()
+    else:
+        form = ContactForm(name=" ".join((current_user.name, current_user.surname)), email=current_user.email,
+                           telephone=current_user.telephone)
     if form.validate_on_submit():
         return render_template("contact.html", form=form, success=True, current_user=current_user)
     return render_template("contact.html", form=form, current_user=current_user)
