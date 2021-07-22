@@ -1,6 +1,7 @@
 """This module stores models used in application."""
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy.orm import relationship
 from . import db, login_manager
 
 
@@ -14,6 +15,7 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(250), unique=False, nullable=False)
     telephone = db.Column(db.Integer, unique=False, nullable=False)
+    opinions = relationship("Opinion", back_populates="opinion_author")
 
     @property
     def password(self):
@@ -67,3 +69,15 @@ def load_user(user_id):
     :rtype: class '__main__.User'
     """
     return User.query.get(int(user_id))
+
+
+class Opinion(db.Model):
+    """Class contains the opinion model --> opinions of logged in users.
+    """
+    __tablename__ = "opinions"
+    id = db.Column(db.Integer, primary_key=True)
+    author_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    opinion_author = relationship("User", back_populates="opinions")
+    text = db.Column(db.Text, nullable=False)
+    image = db.Column(db.Text, nullable=False)
+    date = db.Column(db.DateTime, nullable=False)
