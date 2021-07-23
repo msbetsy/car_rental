@@ -2,7 +2,17 @@
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.orm import relationship
+from sqlalchemy import Table, Column, ForeignKey, DateTime
 from . import db, login_manager
+
+# An association table: Car - Rental - User
+rental_table = Table('rentals', db.Model.metadata,
+                     Column('cars_id', ForeignKey('cars.id'), nullable=False),
+                     Column('users_id', ForeignKey('users.id'), nullable=False),
+                     Column('from_date', DateTime, nullable=False),
+                     Column('to_date', DateTime, nullable=False),
+                     Column('available_from', DateTime, nullable=False)
+                     )
 
 
 class User(UserMixin, db.Model):
@@ -16,6 +26,7 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(250), unique=False, nullable=False)
     telephone = db.Column(db.Integer, unique=False, nullable=False)
     opinions = relationship("Opinion", back_populates="opinion_author")
+    car_rented = relationship('Car', secondary=rental_table)
 
     @property
     def password(self):
@@ -81,3 +92,15 @@ class Opinion(db.Model):
     text = db.Column(db.Text, nullable=False)
     image = db.Column(db.Text, nullable=False)
     date = db.Column(db.DateTime, nullable=False)
+
+
+class Car(db.Model):
+    """Class contains information about the car model.
+    """
+    __tablename__ = "cars"
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(250), unique=False, nullable=False)
+    price = db.Column(db.Float, unique=False, nullable=False)
+    year = db.Column(db.Integer, unique=False, nullable=False)
+    model = db.Column(db.String(250), unique=False, nullable=False)
+    image = db.Column(db.Text, nullable=True)
