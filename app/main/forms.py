@@ -14,3 +14,10 @@ class ContactForm(FlaskForm):
     telephone = TelField("Telephone", validators=[DataRequired()])
     message = TextAreaField("Message", validators=[DataRequired()])
     submit = SubmitField("Send")
+
+
+class OpinionForm(FlaskForm):
+    """Class used for adding opinions.
+    """
+    opinion_text = TextAreaField("Add your opinion", validators=[DataRequired()])
+    submit = SubmitField("Submit")

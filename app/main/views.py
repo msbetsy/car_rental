@@ -1,8 +1,12 @@
 """This module stores application views."""
-from flask import render_template
+import random
+from datetime import datetime
+from flask import render_template, flash, url_for, redirect
 from flask_login import current_user
 from . import main
-from .forms import ContactForm
+from .forms import ContactForm, OpinionForm
+from .. import db
+from ..models import User, Opinion
 
 
 @main.route('/', methods=['GET', 'POST'])
@@ -37,6 +41,27 @@ def show_pricing():
     pass
 
 
-@main.route("/opinions")
-def show_opinions():
-    pass
+@main.route("/opinions", methods=["GET", "POST"])
+def add_opinion():
+    pictures = ["opinion1.jpg", "opinion2.jpg", "opinion3.jpg"]
+    opinions = db.session.query(Opinion.text, Opinion.image, Opinion.date, User.name).filter(
+        Opinion.author_id == User.id).order_by(Opinion.date.desc())
+    number_of_opinions = db.session.query(Opinion).count()
+    form = OpinionForm()
+    if form.validate_on_submit():
+        if not current_user.is_authenticated:
+            flash("You need to login or register to add opinion.")
+            return redirect(url_for("auth.login"))
+        new_opinion = Opinion(
+            text=form.opinion_text.data,
+            opinion_author=current_user,
+            image=random.choice(pictures),
+            date=datetime.today()
+        )
+        db.session.add(new_opinion)
+        db.session.commit()
+        flash("Thank you for your feedback.")
+        return redirect(url_for('main.add_opinion'))
+
+    return render_template("opinions.html", form=form, current_user=current_user, all_opinions=opinions,
+                           all_pictures=pictures, opinions_number=number_of_opinions)

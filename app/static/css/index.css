@@ -33,11 +33,6 @@ body{
     padding: 0;
     text-shadow: 3px 3px 5px black, 0 0 1em #7d5a5a, 0 0 0.4em #7d5a5a;
 }
-.carousel-caption{
-    bottom: initial;
-    top: 60%;
-    transform: translateY(-50%);
-}
 .small-heading{
     font-family: 'Akaya Kanadaka', cursive;
     font-size: 2.2rem;
@@ -65,14 +60,29 @@ body{
 }
 
 /* White Section */
+.carousel {
+    margin: 0 auto;
+    width:62%;
+}
+.carousel-caption{
+    bottom: initial;
+    top: 60%;
+    transform: translateY(-50%);
+}
 .container-advantages{
     padding: 2rem 0 1.3rem;
+}
+.control-label, .feedback{
+    font-size: 1.5rem;
 }
 .icon{
     padding: 0 0 30px;
 }
 .icon:hover {
     color: #900c3f;
+}
+.img-responsive {
+  width:100%;
 }
 .inside-text-section{
     padding:0 10%;
@@ -85,6 +95,31 @@ body{
     line-height: 1.2;
     padding: 0;
 }
+.opinion-form{
+    padding: 10% 0 0 0;
+}
+.testimonial-image{
+    border-radius: 50%;
+    filter: grayscale(100%);
+    opacity: 0.5;
+}
+.testimonial-text{
+    color: #5b0505;
+    font-size: 1.1rem;
+    font-weight: bold;
+    left: 45%;
+    line-height: 1.5;
+    padding: 0 5px 0 5px;
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.testimonial-name{
+    color: #5b0505;
+    font-size: 1rem;
+}
+
 .white-section{
     background-color: #f3e1e1;
     color: #212529;
@@ -107,24 +142,38 @@ body{
 
 /* Different screen size */
 @media only screen and (min-width: 600px) {
-    .small-heading{
-        font-size: 2.8rem;
-        letter-spacing: 0.5rem;
+    .control-label{
+        font-size: 1.8rem;
+    }
+    .feedback{
+        font-size: 1.8rem;
+        padding-bottom: 100px;
+        padding-top: 50px;
     }
     .mail-send{
         font-size: 2.4rem;
         letter-spacing: 0.2rem;
         line-height: 1.5;
     }
-}
-@media only screen and (min-width: 750px) {
     .small-heading{
-        font-size: 3rem;
+        font-size: 2.8rem;
         letter-spacing: 0.5rem;
     }
+     .testimonial-name{
+        font-size: 1.4rem;
+    }
+    .testimonial-text{
+        font-size: 2.5rem;
+       }
+}
+@media only screen and (min-width: 750px) {
     .mail-send{
         font-size: 2.6rem;
         letter-spacing: 0.3rem;
         line-height: 1.6;
+    }
+    .small-heading{
+        font-size: 3rem;
+        letter-spacing: 0.5rem;
     }
 }

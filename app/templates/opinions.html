@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block imagine %}
+<img class="image" src="{{url_for('static', filename='img/write.jpg')}}" alt="write_image">
+{% endblock %}
+
+{% block small_heading %}
+Opinions
+{% endblock %}
+
+{% block big_heading %}
+Opinions
+{% endblock %}
+
+{% block main_section %}
+
+<section class="white-section">
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    {% for message in messages %}
+    <p class="feedback">{{ message }}</p>
+    {% endfor %}
+    {% else %}
+
+    {%if opinions_number != 0: %}
+
+    <div id="testimonial-carousel" class="carousel slide" data-ride="carousel">
+        <div class="carousel-inner">
+            {% for opinion in all_opinions %}
+            <div class="carousel-item {% if loop.index == 1 %} active {% endif %}">
+                <img class="testimonial-image center-block img-responsive"
+                     src="{{url_for('static', filename='img/'+opinion.image)}}"
+                     alt="opinion">
+                <p class="testimonial-text">{{opinion.text|safe}}</p>
+                <br><em class="testimonial-name">{{opinion.name}}, {{(opinion.date|string).split()[0]}}</em>
+            </div>
+            {% endfor %}
+        </div>
+
+        <a class="carousel-control-prev testimonial-control" href="#testimonial-carousel" role="button"
+           data-slide="prev">
+            <span class="carousel-control-prev-icon"></span>
+        </a>
+        <a class="carousel-control-next testimonial-control" href="#testimonial-carousel" role="button"
+           data-slide="next">
+            <span class="carousel-control-next-icon"></span>
+        </a>
+    </div>
+
+    {% endif %}
+
+    <div class="container">
+
+        <div class="opinion-form">
+            {{ ckeditor.load() }}
+            {{ ckeditor.config(name='opinion_text') }}
+            {{ wtf.quick_form(form, novalidate=True, button_map={"submit": "secondary"}) }}
+        </div>
+    </div>
+
+    </div>
+
+    {% endif %}
+    {% endwith %}
+</section>
+{% endblock %}
