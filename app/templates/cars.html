@@ -21,7 +21,8 @@ Car models
                 <div class="card mx-auto" style="width: 20rem;">
                     <img src="{{url_for('static', filename='img/'+car.image)}}" class="card-img-top" alt="car1">
                     <div class="card-body">
-                        <p class="card-text">{{car.name}}</p>
+                        <a href="{{url_for('main.show_car',car_name=car.name)}}"><p class="card-text">{{car.name}} </p>
+                        </a>
                     </div>
                 </div>
             </div>

@@ -1,4 +1,7 @@
 /* Common Styles */
+a, a:hover{
+color: #5b0505;
+}
 body{
     font-family: 'Abel', sans-serif;
     font-size: 20px;
@@ -77,6 +80,9 @@ body{
 }
 .control-label, .feedback{
     font-size: 1.5rem;
+}
+.error{
+font-size: 1.4rem;
 }
 .icon{
     padding: 0 0 30px;

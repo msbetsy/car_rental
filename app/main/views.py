@@ -4,7 +4,7 @@ from datetime import datetime
 from flask import render_template, flash, url_for, redirect
 from flask_login import current_user
 from . import main
-from .forms import ContactForm, OpinionForm
+from .forms import ContactForm, OpinionForm, CalendarForm
 from .. import db
 from ..models import User, Opinion, Car
 
@@ -36,6 +36,16 @@ def show_models():
     car_models = Car.query.all()
     number_of_car_models = len(car_models)
     return render_template("cars.html", current_user=current_user, all_cars=car_models, car_number=number_of_car_models)
+
+
+@main.route("/cars/<string:car_name>", methods=["GET", "POST"])
+def show_car(car_name):
+    car_to_show = Car.query.filter_by(name=car_name).first()
+    form = CalendarForm()
+    if form.validate_on_submit():
+        from_date = form.start_date.data
+        from_time = form.start_time.data
+    return render_template("car.html", form=form, car=car_to_show, current_user=current_user, car_name=car_name)
 
 
 @main.route("/opinions", methods=["GET", "POST"])

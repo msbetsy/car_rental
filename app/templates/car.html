@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block imagine %}
+<img class="image" src="{{url_for('static', filename='img/'+car.image)}}" alt="news_image">
+{% endblock %}
+
+{% block small_heading %}
+{{car.name}}
+{% endblock %}
+
+{% block big_heading %}
+{{car.name}}
+{% endblock %}
+
+{% block main_text %}
+<p class="control-label">Model: {{car.model}}</p>
+<p class="control-label">Year: {{car.year}}</p>
+<p class="control-label">Price: {{car.price}}$</p>
+<form action="" method="POST">
+    {{ form.csrf_token() }}
+    <div class="row">
+        <div class="form-group col-md-12 control-label">
+            Choose date and time:
+        </div>
+        <div class="form-group col-md-6">
+            Start date: {{ form.start_date( class='datepicker') }}
+            <span class="error">
+              {% if form.start_date.errors %}
+                {% for error in form.start_date.errors %}
+                  {{ error }}
+                {% endfor %}
+              {% endif %}
+            </span>
+        </div>
+        <div class="form-group col-md-6">
+            Start time: {{ form.start_time(class='timepicker') }}
+            <span class="error">
+              {% if form.start_time.errors %}
+                {% for error in form.start_time.errors %}
+                  {{ error }}
+                {% endfor %}
+              {% endif %}
+            </span>
+        </div>
+        <div class="form-group col-md-6">
+            End date: {{ form.end_date(class='datepicker') }}
+        </div>
+        <div class="form-group col-md-6">
+            End time: {{ form.end_time(class='dtimepicker') }}
+        </div>
+    </div>
+    <button type="submit" class="btn btn-secondary">Submit</button>
+
+</form>
+{% endblock %}
