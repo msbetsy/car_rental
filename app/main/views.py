@@ -6,7 +6,7 @@ from flask_login import current_user
 from . import main
 from .forms import ContactForm, OpinionForm
 from .. import db
-from ..models import User, Opinion
+from ..models import User, Opinion, Car
 
 
 @main.route('/', methods=['GET', 'POST'])
@@ -31,14 +31,11 @@ def show_news():
     pass
 
 
-@main.route("/models")
+@main.route("/cars")
 def show_models():
-    pass
-
-
-@main.route("/pricing")
-def show_pricing():
-    pass
+    car_models = Car.query.all()
+    number_of_car_models = len(car_models)
+    return render_template("cars.html", current_user=current_user, all_cars=car_models, car_number=number_of_car_models)
 
 
 @main.route("/opinions", methods=["GET", "POST"])

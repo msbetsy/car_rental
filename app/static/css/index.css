@@ -60,6 +60,9 @@ body{
 }
 
 /* White Section */
+.car-column{
+    padding-bottom: 30px;
+}
 .carousel {
     margin: 0 auto;
     width:62%;
