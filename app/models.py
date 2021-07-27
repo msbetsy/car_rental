@@ -5,15 +5,6 @@ from sqlalchemy.orm import relationship
 from sqlalchemy import Table, Column, ForeignKey, DateTime
 from . import db, login_manager
 
-# An association table: Car - Rental - User
-rental_table = Table('rentals', db.Model.metadata,
-                     Column('cars_id', ForeignKey('cars.id'), nullable=False),
-                     Column('users_id', ForeignKey('users.id'), nullable=False),
-                     Column('from_date', DateTime, nullable=False),
-                     Column('to_date', DateTime, nullable=False),
-                     Column('available_from', DateTime, nullable=False)
-                     )
-
 
 class User(UserMixin, db.Model):
     """Class contains the user model --> the signed up person.
@@ -26,7 +17,7 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(250), unique=False, nullable=False)
     telephone = db.Column(db.Integer, unique=False, nullable=False)
     opinions = relationship("Opinion", back_populates="opinion_author")
-    car_rented = relationship('Car', secondary=rental_table)
+    car_rented = relationship('Rental', back_populates="users_rent")
 
     @property
     def password(self):
@@ -104,3 +95,17 @@ class Car(db.Model):
     year = db.Column(db.Integer, unique=False, nullable=False)
     model = db.Column(db.String(250), unique=False, nullable=False)
     image = db.Column(db.Text, nullable=True)
+    car_rental = relationship("Rental", back_populates="car_rent")
+
+
+class Rental(db.Model):
+    """Class contains information about rentals.
+    """
+    __tablename__ = 'rentals'
+    cars_id = Column(ForeignKey('cars.id'), primary_key=True, nullable=False)
+    users_id = Column(ForeignKey('users.id'), primary_key=True, nullable=False)
+    from_date = db.Column(db.DateTime, nullable=False)
+    to_date = db.Column(db.DateTime, nullable=False)
+    available_from = db.Column(db.DateTime, nullable=False)
+    users_rent = relationship('User', back_populates="car_rented")
+    car_rent = relationship("Car", back_populates="car_rental")
