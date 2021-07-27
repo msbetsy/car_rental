@@ -1,8 +1,9 @@
 """This module stores application forms."""
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, TextAreaField
-from wtforms.fields.html5 import TelField
+from wtforms.fields.html5 import TelField, DateField
 from wtforms.validators import DataRequired, Email, Length
+from wtforms_components import TimeField
 
 
 class ContactForm(FlaskForm):
@@ -21,3 +22,26 @@ class OpinionForm(FlaskForm):
     """
     opinion_text = TextAreaField("Add your opinion", validators=[DataRequired()])
     submit = SubmitField("Submit")
+
+
+class CalendarForm(FlaskForm):
+    """Class used for choosing date and time of car rental.
+    """
+    start_date = DateField(format='%Y-%m-%d', validators=[DataRequired()])
+    start_time = TimeField(format='%H:%M', validators=[DataRequired()])
+    end_date = DateField(format='%Y-%m-%d', validators=[DataRequired()])
+    end_time = TimeField(format='%H:%M', validators=[DataRequired()])
+    submit = SubmitField("Submit")
+
+    def validate(self):
+        if not super().validate():
+            return False
+        result = True
+        if self.start_date.data > self.end_date.data:
+            result = False
+            self.start_date.errors.append("Start date is later than end date!")
+        if self.start_time.data > self.end_time.data:
+            result = False
+            self.start_time.errors.append("Start time is later than end time!")
+
+        return result
