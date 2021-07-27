@@ -34,6 +34,11 @@ class CalendarForm(FlaskForm):
     submit = SubmitField("Submit")
 
     def validate(self):
+        """Custom validator - check dates and time.
+
+        :return: result of the validation if data is correct
+        :rtype: boolean
+        """
         if not super().validate():
             return False
         result = True
