@@ -45,8 +45,18 @@ class CalendarForm(FlaskForm):
         if self.start_date.data > self.end_date.data:
             result = False
             self.start_date.errors.append("Start date is later than end date!")
-        if self.start_time.data > self.end_time.data:
+        if self.start_date.data == self.end_date.data and self.start_time.data > self.end_time.data:
             result = False
             self.start_time.errors.append("Start time is later than end time!")
 
         return result
+
+
+class CarForm(FlaskForm):
+    """Class used for adding car models.
+    """
+    name = StringField("Name", validators=[DataRequired()])
+    price = StringField("Price", validators=[DataRequired()])
+    year = StringField("Year", validators=[DataRequired()])
+    model = StringField("Model", validators=[DataRequired()])
+    submit = SubmitField("Add")
