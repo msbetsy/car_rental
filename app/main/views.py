@@ -1,6 +1,6 @@
 """This module stores application views."""
 import random
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import render_template, flash, url_for, redirect
 from flask_login import current_user
 from . import main
@@ -41,10 +41,29 @@ def show_models():
 @main.route("/cars/<string:car_name>", methods=["GET", "POST"])
 def show_car(car_name):
     car_to_show = Car.query.filter_by(name=car_name).first()
+    rental_list = car_to_show.car_rental
     form = CalendarForm()
     if form.validate_on_submit():
         from_date = form.start_date.data
         from_time = form.start_time.data
+        to_date = form.end_date.data
+        to_time = form.end_time.data
+        from_datetime = datetime.strptime(" ".join((str(from_date), str(from_time))), '%Y-%m-%d %H:%M:%S')
+        to_datetime = datetime.strptime(" ".join((str(to_date), str(to_time))), '%Y-%m-%d %H:%M:%S')
+        if len(rental_list) != 0:
+            for element in rental_list:
+                datetime_available_from = element.from_date + timedelta(minutes=-61)
+                if datetime_available_from <= from_datetime <= element.available_from or \
+                        datetime_available_from <= to_datetime <= element.available_from:
+                    flash("Change dates!")
+                    flash(" ".join(("Available before: ", str(element.from_date + timedelta(minutes=-61))[:-3])))
+                    flash(" ".join(("Available after: ", str(element.available_from + timedelta(minutes=1))[:-3])))
+
+                if datetime_available_from < datetime_available_from < to_datetime or \
+                        datetime_available_from < element.available_from < to_datetime:
+                    flash("Change dates!")
+                    flash(" ".join(("Available before:", str(element.from_date + timedelta(minutes=-61))[:-3])))
+                    flash(" ".join(("Available after: ", str(element.available_from + timedelta(minutes=1))[:-3])))
     return render_template("car.html", form=form, car=car_to_show, current_user=current_user, car_name=car_name)
 
 

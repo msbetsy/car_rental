@@ -15,6 +15,10 @@
 <p class="control-label">Model: {{car.model}}</p>
 <p class="control-label">Year: {{car.year}}</p>
 <p class="control-label">Price: {{car.price}}$</p>
+{% if not current_user.is_authenticated %}
+<p class="control-label">Please, log in to see the calendar.</p>
+{% endif %}
+{% if current_user.is_authenticated %}
 <form action="" method="POST">
     {{ form.csrf_token() }}
     <div class="row">
@@ -51,4 +55,12 @@
     <button type="submit" class="btn btn-secondary">Submit</button>
 
 </form>
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+{% for message in messages %}
+<p>{{ message }}</p>
+{% endfor %}
+{% endif %}
+{% endwith %}
+{% endif %}
 {% endblock %}
