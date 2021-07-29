@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block imagine %}
+<img class="image" src="{{url_for('static', filename='img/news.jpg')}}" alt="news_image">
+{% endblock %}
+
+{% block small_heading %}
+News
+{% endblock %}
+
+{% block big_heading %}
+News
+{% endblock %}
+
+{% block main_text %}
+{% for post in all_posts %}
+<div class="post-preview">
+    <h2 class="post-title">
+        {{post.title}}
+    </h2>
+    <p class="post-body">Posted by
+        {{post.author.name}}
+        on {{post.date}}
+    </p>
+</div>
+{% endfor %}
+
+{% endblock %}

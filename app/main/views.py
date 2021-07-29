@@ -4,9 +4,9 @@ from datetime import datetime, timedelta
 from flask import render_template, flash, url_for, redirect
 from flask_login import current_user
 from . import main
-from .forms import ContactForm, OpinionForm, CalendarForm
+from .forms import ContactForm, OpinionForm, CalendarForm, NewsPostForm
 from .. import db
-from ..models import User, Opinion, Car
+from ..models import User, Opinion, Car, NewsPost
 
 
 @main.route('/', methods=['GET', 'POST'])
@@ -24,11 +24,6 @@ def contact():
     if form.validate_on_submit():
         return render_template("contact.html", form=form, success=True, current_user=current_user)
     return render_template("contact.html", form=form, current_user=current_user)
-
-
-@main.route("/news")
-def show_news():
-    pass
 
 
 @main.route("/cars")
@@ -91,3 +86,9 @@ def add_opinion():
 
     return render_template("opinions.html", form=form, current_user=current_user, all_opinions=opinions,
                            all_pictures=pictures, opinions_number=number_of_opinions)
+
+
+@main.route("/news")
+def show_news():
+    posts = NewsPost.query.all()
+    return render_template("news.html", current_user=current_user, all_posts=posts)
