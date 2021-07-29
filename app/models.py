@@ -2,7 +2,7 @@
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.orm import relationship
-from sqlalchemy import Table, Column, ForeignKey, DateTime
+from sqlalchemy import Column, ForeignKey
 from . import db, login_manager
 
 
@@ -18,6 +18,8 @@ class User(UserMixin, db.Model):
     telephone = db.Column(db.Integer, unique=False, nullable=False)
     opinions = relationship("Opinion", back_populates="opinion_author")
     car_rented = relationship('Rental', back_populates="users_rent")
+    posts = relationship("NewsPost", back_populates="author")
+    comments = relationship("Comment", back_populates="comment_author")
 
     @property
     def password(self):
@@ -109,3 +111,29 @@ class Rental(db.Model):
     available_from = db.Column(db.DateTime, nullable=False)
     users_rent = relationship('User', back_populates="car_rented")
     car_rent = relationship("Car", back_populates="car_rental")
+
+
+class NewsPost(db.Model):
+    """Class contains NewsPosts.
+    """
+    __tablename__ = "news_posts"
+    id = db.Column(db.Integer, primary_key=True)
+    author_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    author = relationship("User", back_populates="posts")
+    title = db.Column(db.String(250), unique=True, nullable=False)
+    date = db.Column(db.String(250), nullable=False)
+    body = db.Column(db.Text, nullable=False)
+    img_url = db.Column(db.String(250), nullable=False)
+    comments = relationship("Comment", back_populates="parent_post")
+
+
+class Comment(db.Model):
+    """Class contains comments to NewsPosts.
+    """
+    __tablename__ = "comments"
+    id = db.Column(db.Integer, primary_key=True)
+    post_id = db.Column(db.Integer, db.ForeignKey("news_posts.id"), nullable=False)
+    author_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    parent_post = relationship("NewsPost", back_populates="comments")
+    comment_author = relationship("User", back_populates="comments")
+    text = db.Column(db.Text, nullable=False)
