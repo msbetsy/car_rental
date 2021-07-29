@@ -106,7 +106,7 @@ class Rental(db.Model):
     __tablename__ = 'rentals'
     cars_id = Column(ForeignKey('cars.id'), primary_key=True, nullable=False)
     users_id = Column(ForeignKey('users.id'), primary_key=True, nullable=False)
-    from_date = db.Column(db.DateTime, nullable=False)
+    from_date = db.Column(db.DateTime, primary_key=True, nullable=False)
     to_date = db.Column(db.DateTime, nullable=False)
     available_from = db.Column(db.DateTime, nullable=False)
     users_rent = relationship('User', back_populates="car_rented")
