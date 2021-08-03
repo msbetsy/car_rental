@@ -23,8 +23,4 @@ def upgrade():
 
 def downgrade():
     with op.batch_alter_table('rentals', schema=None) as batch_op:
-        batch_op.drop_constraint(constraint_name='cars_id_users_id_from_date',
-                                 type_='primary')
-
-    with op.batch_alter_table('rentals', schema=None) as batch_op:
-        batch_op.create_primary_key(constraint_name='cars_id_users_id', columns=['cars_id', 'users_id'])
+        batch_op.drop_constraint('cars_id_users_id_from_date', type_='primary')
