@@ -6,6 +6,32 @@ from sqlalchemy import Column, ForeignKey
 from . import db, login_manager
 
 
+class Role(db.Model):
+    """Class contains the role model --> each role has different permissions.
+    """
+    __tablename__ = 'roles'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), unique=True)
+    default = db.Column(db.Boolean, default=False, index=True)
+    permissions = db.Column(db.Integer)
+    users = db.relationship('User', backref='role', lazy='dynamic')
+
+    def __init__(self, **kwargs):
+        """The default value of the permission field will be 0.
+        """
+        super(Role, self).__init__(**kwargs)
+        if self.permissions is None:
+            self.permissions = 0
+
+    def __repr__(self):
+        """Returns printable representation of Role's class object.
+
+        :return name: Name of the role.
+        :rtype: str
+        """
+        return '<Role %r>' % self.name
+
+
 class User(UserMixin, db.Model):
     """Class contains the user model --> the signed up person.
     """
@@ -20,6 +46,7 @@ class User(UserMixin, db.Model):
     car_rented = relationship('Rental', back_populates="users_rent")
     posts = relationship("NewsPost", back_populates="author")
     comments = relationship("Comment", back_populates="comment_author")
+    role_id = db.Column(db.Integer, db.ForeignKey('roles.id', name="fk_role_id"))
 
     @property
     def password(self):
