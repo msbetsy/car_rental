@@ -1,9 +1,19 @@
 """This module stores models used in application."""
-from flask_login import UserMixin
+from flask_login import UserMixin, AnonymousUserMixin
+from flask import current_app
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.orm import relationship
 from sqlalchemy import Column, ForeignKey
 from . import db, login_manager
+
+
+class Permission:
+    """Class contains the permission model --> each permission has different value.
+    """
+    COMMENT = 1
+    WRITE = 2
+    MODERATE = 4
+    ADMIN = 8
 
 
 class Role(db.Model):
@@ -23,6 +33,60 @@ class Role(db.Model):
         if self.permissions is None:
             self.permissions = 0
 
+    @staticmethod
+    def insert_roles():
+        """Insert roles for users included in dict.
+        """
+        roles = {
+            'User': [Permission.COMMENT],
+            'Moderator': [Permission.COMMENT, Permission.WRITE, Permission.MODERATE],
+            'Administrator': [Permission.COMMENT, Permission.WRITE, Permission.MODERATE, Permission.ADMIN],
+        }
+        default_role = 'User'
+        for item in roles:
+            role = Role.query.filter_by(name=item).first()
+            if role is None:
+                role = Role(name=item)
+            role.reset_permissions()
+            for permission in roles[item]:
+                role.add_permission(permission)
+            role.default = (role.name == default_role)
+            db.session.add(role)
+        db.session.commit()
+
+    def has_permission(self, permission):
+        """Checks if user has permission.
+
+        :param permission: The name of the permission.
+        :type permission: int
+        :return: Information if object has permission.
+        :rtype: bool
+        """
+        return self.permissions & permission == permission
+
+    def add_permission(self, permission):
+        """Add permission if user doesn't have one.
+
+        :param permission: The name of the permission.
+        :type permission: int
+        """
+        if not self.has_permission(permission):
+            self.permissions += permission
+
+    def remove_permission(self, permission):
+        """Remove permission from user.
+
+        :param permission: The name of the permission.
+        :type permission: int
+        """
+        if self.has_permission(permission):
+            self.permissions -= permission
+
+    def reset_permissions(self):
+        """Reset all user's permissions.
+        """
+        self.permissions = 0
+
     def __repr__(self):
         """Returns printable representation of Role's class object.
 
@@ -30,6 +94,32 @@ class Role(db.Model):
         :rtype: str
         """
         return '<Role %r>' % self.name
+
+
+class AnonymousUser(AnonymousUserMixin):
+    """Class used to check permissions for anonymous user.
+    """
+
+    def can(self, permission):
+        """Checks if user has permission.
+
+        :param permission: The name of the permission.
+        :type permission: int
+        :return: Information that user doesn't have permission.
+        :rtype: bool
+        """
+        return False
+
+    def is_admin(self):
+        """Checks if user is admin.
+
+        :return: Information that user isn't admin.
+        :rtype: bool
+        """
+        return False
+
+
+login_manager.anonymous_user = AnonymousUser
 
 
 class User(UserMixin, db.Model):
@@ -48,6 +138,32 @@ class User(UserMixin, db.Model):
     comments = relationship("Comment", back_populates="comment_author")
     role_id = db.Column(db.Integer, db.ForeignKey('roles.id', name="fk_role_id"))
 
+    def __init__(self, **kwargs):
+        super(User, self).__init__(**kwargs)
+        if self.role is None:
+            if self.email == current_app.config['CAR_ADMIN']:
+                self.role = Role.query.filter_by(name='Administrator').first()
+            if self.role is None:
+                self.role = Role.query.filter_by(default=True).first()
+
+    def can(self, permission):
+        """Checks if user has permission.
+
+        :param permission: The name of the permission.
+        :type permission: int
+        :return: Information if user has permission.
+        :rtype: bool
+        """
+        return self.role is not None and self.role.has_permission(permission)
+
+    def is_admin(self):
+        """Check if user is admin.
+
+        :return: The information if user is admin.
+        :rtype: bool
+        """
+        return self.can(Permission.ADMIN)
+
     @property
     def password(self):
         """A getter function for the password.
@@ -61,7 +177,7 @@ class User(UserMixin, db.Model):
         """A setter function for the password.
 
         :param password: User's password.
-        :type: str
+        :type password: str
         """
         hash_and_salted_password = generate_password_hash(
             password,
@@ -74,7 +190,7 @@ class User(UserMixin, db.Model):
         """Check if password is correct.
 
         :param password: User's password.
-        :type: str
+        :type password: str
         :return: The information if the password matched.
         :rtype: bool
         """
@@ -95,7 +211,7 @@ def load_user(user_id):
     """Provides user session management - loading user.
 
     :param user_id: The ID of the user.
-    :type: str
+    :type user_id: str
     :return: The corresponding user object.
     :rtype: class '__main__.User'
     """

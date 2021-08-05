@@ -12,6 +12,7 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     REMEMBER_COOKIE_DURATION = timedelta(minutes=10)
     PERMANENT_SESSION_LIFETIME = timedelta(minutes=60)
+    CAR_ADMIN = os.environ.get('CAR_ADMIN')
 
     @staticmethod
     def init_app(app):
