@@ -63,6 +63,10 @@ body{
 }
 
 /* White Section */
+.card-img-top{
+    height:212px;
+    width:318px;
+}
 .car-column{
     padding-bottom: 30px;
 }

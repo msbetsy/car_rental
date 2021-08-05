@@ -6,7 +6,7 @@ from flask import render_template, flash, url_for, redirect
 from flask_login import current_user, login_required
 from werkzeug.utils import secure_filename
 from . import main
-from .forms import ContactForm, OpinionForm, CalendarForm, NewsPostForm
+from .forms import ContactForm, OpinionForm, CalendarForm, NewsPostForm, CarForm
 from .. import db
 from ..models import User, Opinion, Car, NewsPost, Permission
 
@@ -46,7 +46,31 @@ def contact():
 def show_models():
     car_models = Car.query.all()
     number_of_car_models = len(car_models)
-    return render_template("cars.html", current_user=current_user, all_cars=car_models, car_number=number_of_car_models)
+    return render_template("cars.html", current_user=current_user, all_cars=car_models, car_number=number_of_car_models,
+                           permission=Permission.WRITE)
+
+
+@main.route("/cars/add", methods=["GET", "POST"])
+def add_model():
+    form = CarForm()
+    if form.validate_on_submit():
+        file = form.image.data
+        is_file = os.path.isfile(os.path.join(basedir, 'static\img\\', file.filename))
+        filename = secure_filename(file.filename)
+        if not is_file and allowed_file(file.filename):
+            file.save(os.path.join(basedir, 'static\img\\', filename))
+        new_car = Car(
+            name=form.name.data,
+            price=form.price.data,
+            year=form.year.data,
+            model=form.model.data,
+            image=filename
+        )
+        db.session.add(new_car)
+        db.session.commit()
+        return redirect(url_for('main.show_models'))
+
+    return render_template("new_car.html", form=form,  current_user=current_user)
 
 
 @main.route("/cars/<string:car_name>", methods=["GET", "POST"])

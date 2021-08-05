@@ -12,10 +12,20 @@ Car models
 {% endblock %}
 
 {% block main_section %}
-{% if car_number!= 0: %}
+
 <section class="white-section">
+      <!-- New Car -->
+        {% if current_user.can(permission) %}
+        <div class="clearfix">
+          <a class="btn btn-secondary float-left" href="{{url_for('main.add_model')}}">Add New Car</a>
+        </div>
+        {% endif %}
     <div class="car-container">
+
         <div class="row">
+
+            <!-- Show Cars -->
+        {% if car_number!= 0: %}
             {% for car in all_cars %}
             <div class="car-column col-lg-4 col-md-6">
                 <div class="card mx-auto" style="width: 20rem;">
@@ -27,8 +37,10 @@ Car models
                 </div>
             </div>
             {% endfor %}
+            {% endif %}
         </div>
+
     </div>
+
 </section>
-{% endif %}
 {% endblock %}
