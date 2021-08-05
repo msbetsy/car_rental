@@ -1,9 +1,11 @@
 """This module stores application forms."""
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, TextAreaField
+from flask_wtf.file import FileField, FileAllowed, FileRequired
 from wtforms.fields.html5 import TelField, DateField
 from wtforms.validators import DataRequired, Email, Length
 from wtforms_components import TimeField
+from flask_ckeditor import CKEditorField
 
 
 class ContactForm(FlaskForm):
@@ -52,11 +54,10 @@ class CalendarForm(FlaskForm):
         return result
 
 
-class CarForm(FlaskForm):
-    """Class used for adding car models.
+class NewsPostForm(FlaskForm):
+    """Class used for adding new posts.
     """
-    name = StringField("Name", validators=[DataRequired()])
-    price = StringField("Price", validators=[DataRequired()])
-    year = StringField("Year", validators=[DataRequired()])
-    model = StringField("Model", validators=[DataRequired()])
-    submit = SubmitField("Add")
+    title = StringField("Title", validators=[DataRequired()])
+    img_url = FileField("Image ", validators=[FileRequired(), FileAllowed(['jpg', 'png', 'gif'], 'Images only!')])
+    news_text = CKEditorField("Post", validators=[DataRequired()])
+    submit = SubmitField("Submit")
