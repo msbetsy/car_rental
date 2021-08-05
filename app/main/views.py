@@ -108,3 +108,29 @@ def add_opinion():
 def show_news():
     posts = NewsPost.query.order_by(NewsPost.date.desc()).all()
     return render_template("news.html", current_user=current_user, all_posts=posts, permission=Permission.WRITE)
+
+
+@main.route("/new-post", methods=["GET", "POST"])
+@login_required
+def add_new_post():
+    form = NewsPostForm()
+    if form.validate_on_submit():
+        file = form.img_url.data
+        is_file = os.path.isfile(os.path.join(basedir, 'static\img\\', file.filename))
+        filename = secure_filename(file.filename)
+        if not is_file and allowed_file(file.filename):
+            file.save(os.path.join(basedir, 'static\img\\', filename))
+
+        new_post = NewsPost(
+            title=form.title.data,
+            date=date.today().strftime("%Y-%m-%d"),
+            body=form.news_text.data,
+            author=current_user,
+            img_url=filename
+        )
+
+        db.session.add(new_post)
+        db.session.commit()
+        return redirect(url_for('main.show_news'))
+
+    return render_template("new_post.html", form=form, current_user=current_user)

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block imagine %}
+{% if is_edit: %}
+<img class="image" src="{{url_for('static', filename='img/edit.jpg')}}" alt="edit_image">
+{% else: %}
+<img class="image" src="{{url_for('static', filename='img/write.jpg')}}" alt="write_image">
+{% endif %}
+{% endblock %}
+
+{% block small_heading %}
+{% if is_edit: %}
+<h1 class="big-heading">Edit post</h1>
+{% else: %}
+<h1 class="big-heading">Add post</h1>
+{% endif %}
+{% endblock %}
+
+{% block big_heading %}
+{% if is_edit: %}
+<h1 class="big-heading">Edit post</h1>
+{% else: %}
+<h1 class="big-heading">Add post</h1>
+{% endif %}
+{% endblock %}
+
+
+{% block main_text %}
+{{ ckeditor.load() }}
+{{ ckeditor.config(name='news_text')}}
+{{ wtf.quick_form(form, novalidate=True, button_map={"submit": "secondary"}) }}
+{% endblock %}
