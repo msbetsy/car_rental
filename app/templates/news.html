@@ -12,6 +12,13 @@ News
 {% endblock %}
 
 {% block main_text %}
+<!-- New Post -->
+        {% if current_user.can(permission) %}
+        <div class="clearfix">
+          <a class="btn btn-secondary float-left" href="{{url_for('main.add_new_post')}}">Create New Post</a>
+        </div>
+        {% endif %}
+<!-- Show Posts -->
 {% for post in all_posts %}
 <div class="post-preview">
     <h2 class="post-title">

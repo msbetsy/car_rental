@@ -1,12 +1,28 @@
 """This module stores application views."""
 import random
-from datetime import datetime, timedelta
+import os
+from datetime import date, datetime, timedelta
 from flask import render_template, flash, url_for, redirect
-from flask_login import current_user
+from flask_login import current_user, login_required
+from werkzeug.utils import secure_filename
 from . import main
 from .forms import ContactForm, OpinionForm, CalendarForm, NewsPostForm
 from .. import db
-from ..models import User, Opinion, Car, NewsPost
+from ..models import User, Opinion, Car, NewsPost, Permission
+
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+
+
+def allowed_file(filename):
+    """Check if file is allowed
+
+    :param filename: The name of the file.
+    :type filename: str
+    :return: Information if file if allowed.
+    :rtype: bool
+    """
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 @main.route('/', methods=['GET', 'POST'])
@@ -90,5 +106,5 @@ def add_opinion():
 
 @main.route("/news")
 def show_news():
-    posts = NewsPost.query.all()
-    return render_template("news.html", current_user=current_user, all_posts=posts)
+    posts = NewsPost.query.order_by(NewsPost.date.desc()).all()
+    return render_template("news.html", current_user=current_user, all_posts=posts, permission=Permission.WRITE)
