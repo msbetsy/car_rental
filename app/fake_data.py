@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from faker import Faker
 
 from . import db
-from .models import User, Opinion, Car, Rental, NewsPost
+from .models import User, Opinion, Car, Rental, NewsPost, Comment
 
 
 def users(count=10):
@@ -103,6 +103,22 @@ def posts(count=10):
         post = NewsPost(author_id=random.choice(users_id), title=titles[i], date=fake.date(), body=fake.text(),
                         img_url=random.choice(images))
         db.session.add(post)
+        try:
+            db.session.commit()
+            i += 1
+        except IntegrityError:
+            db.session.rollback()
+
+
+def comments(count=30):
+    """Add fake comments to db - Comments model."""
+    fake = Faker()
+    i = 0
+    users_id = [item[0] for item in User.query.with_entities(User.id).all()]
+    posts_id = [item[0] for item in NewsPost.query.with_entities(NewsPost.id).all()]
+    while i < count:
+        comment = Comment(post_id=random.choice(posts_id), author_id=random.choice(users_id), text=fake.text())
+        db.session.add(comment)
         try:
             db.session.commit()
             i += 1
