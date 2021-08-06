@@ -280,4 +280,4 @@ class Comment(db.Model):
     parent_post = relationship("NewsPost", back_populates="comments")
     comment_author = relationship("User", back_populates="comments")
     text = db.Column(db.Text, nullable=False)
-    date = db.Column(db.DateTime, nullable=True)
+    date = db.Column(db.DateTime, nullable=False)
