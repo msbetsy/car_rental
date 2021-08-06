@@ -117,7 +117,8 @@ def comments(count=30):
     users_id = [item[0] for item in User.query.with_entities(User.id).all()]
     posts_id = [item[0] for item in NewsPost.query.with_entities(NewsPost.id).all()]
     while i < count:
-        comment = Comment(post_id=random.choice(posts_id), author_id=random.choice(users_id), text=fake.text())
+        comment = Comment(post_id=random.choice(posts_id), author_id=random.choice(users_id), text=fake.text(),
+                          date=fake.date_time())
         db.session.add(comment)
         try:
             db.session.commit()
