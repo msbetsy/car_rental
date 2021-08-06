@@ -72,3 +72,10 @@ class CarForm(FlaskForm):
     model = StringField("Model", validators=[DataRequired()])
     image = FileField("Image ", validators=[FileRequired(), FileAllowed(['jpg', 'png', 'gif'], 'Images only!')])
     submit = SubmitField("Add")
+
+
+class CommentForm(FlaskForm):
+    """Class used for adding comments to posts.
+    """
+    text = TextAreaField("Add comment", validators=[DataRequired()])
+    submit = SubmitField("Add")
