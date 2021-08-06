@@ -6,9 +6,9 @@ from flask import render_template, flash, url_for, redirect
 from flask_login import current_user, login_required
 from werkzeug.utils import secure_filename
 from . import main
-from .forms import ContactForm, OpinionForm, CalendarForm, NewsPostForm, CarForm
+from .forms import ContactForm, OpinionForm, CalendarForm, NewsPostForm, CarForm, CommentForm
 from .. import db
-from ..models import User, Opinion, Car, NewsPost, Permission
+from ..models import User, Opinion, Car, NewsPost, Permission, Comment
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -140,7 +140,27 @@ def show_post(post_id):
     is_file = os.path.isfile(os.path.join(basedir, 'static\img\\', post_to_show.img_url))
     if not is_file:
         post_to_show.img_url = "no_img.jpg"
-    return render_template("post.html", post=post_to_show)
+    comments_for_post = Comment.query.filter_by(post_id=post_id).order_by(Comment.date.desc()).all()
+
+    add_comment = False
+    form = CommentForm()
+    if form.validate_on_submit():
+        if not current_user.is_authenticated:
+            flash("You need to login or register to comment.")
+            return redirect(url_for("auth.login"))
+
+        new_comment = Comment(
+            text=form.text.data,
+            comment_author=current_user,
+            parent_post=post_to_show,
+            date=datetime.today()
+        )
+        db.session.add(new_comment)
+        db.session.commit()
+        add_comment = True
+
+    return render_template("post.html", post=post_to_show, comments=comments_for_post, form=form,
+                           add_comment=add_comment)
 
 
 @main.route("/new-post", methods=["GET", "POST"])

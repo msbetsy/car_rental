@@ -5,6 +5,30 @@
 {% block small_heading %} {{post.title}} {% endblock %}
 {% block big_heading %} {{post.title}} {% endblock %}
 {% block main_text %}
-Posted on {{post.date}} by {{post.author.name}}
+<h3>Posted on {{post.date}} by {{post.author.name}} </h3>
 <br> <br>{{post.body|safe}}
+<br><br>
+<!--Show comments-->
+<h3 class="commentsAll">Comments:</h3>
+<hr>
+{% if not add_comment %}
+{{ wtf.quick_form(form, novalidate=True, button_map={"submit": "secondary"}) }}
+{% endif %}
+<div class="col-lg-8 col-md-10">
+    {% for comment in comments: %}
+    <div class="comment">
+        <div class="commentAuthor">
+            {{comment.comment_author.name}} {{comment.comment_author.surname}}
+        </div>
+        <div class="commentDate">
+            {{(comment.date|string)[:19]}}
+        </div>
+
+        <div class="commentText">
+            {{comment.text|safe}}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
 {% endblock %}

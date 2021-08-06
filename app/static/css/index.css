@@ -79,6 +79,24 @@ body{
     top: 60%;
     transform: translateY(-50%);
 }
+.comment{
+    padding: 10px 0 10px 0;
+}
+.commentAuthor{
+    font-weight: bold;
+    text-align: left;
+}
+.commentDate{
+    font-size: 16px;
+    text-align: left;
+}
+.commentText{
+    text-align: left;
+    padding: 10px 0 10px 0;
+}
+.commentsAll{
+    text-align: left;
+}
 .container-advantages{
     padding: 2rem 0 1.3rem;
 }
