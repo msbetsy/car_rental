@@ -13,17 +13,19 @@ News
 
 {% block main_text %}
 <!-- New Post -->
-        {% if current_user.can(permission) %}
-        <div class="clearfix">
-          <a class="btn btn-secondary float-left" href="{{url_for('main.add_new_post')}}">Create New Post</a>
-        </div>
-        {% endif %}
+{% if current_user.can(permission) %}
+<div class="clearfix">
+    <a class="btn btn-secondary float-left" href="{{url_for('main.add_new_post')}}">Create New Post</a>
+</div>
+{% endif %}
 <!-- Show Posts -->
 {% for post in all_posts %}
 <div class="post-preview">
-    <h2 class="post-title">
-        {{post.title}}
-    </h2>
+    <a href="{{url_for('main.show_post',post_id=post.id)}}">
+        <h2 class="post-title">
+            {{post.title}}
+        </h2>
+    </a>
     <p class="post-body">Posted by
         {{post.author.name}}
         on {{post.date}}

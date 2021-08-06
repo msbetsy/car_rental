@@ -70,7 +70,7 @@ def add_model():
         db.session.commit()
         return redirect(url_for('main.show_models'))
 
-    return render_template("new_car.html", form=form,  current_user=current_user)
+    return render_template("new_car.html", form=form, current_user=current_user)
 
 
 @main.route("/cars/<string:car_name>", methods=["GET", "POST"])
@@ -132,6 +132,15 @@ def add_opinion():
 def show_news():
     posts = NewsPost.query.order_by(NewsPost.date.desc()).all()
     return render_template("news.html", current_user=current_user, all_posts=posts, permission=Permission.WRITE)
+
+
+@main.route("/news/<int:post_id>", methods=["GET", "POST"])
+def show_post(post_id):
+    post_to_show = NewsPost.query.get_or_404(post_id)
+    is_file = os.path.isfile(os.path.join(basedir, 'static\img\\', post_to_show.img_url))
+    if not is_file:
+        post_to_show.img_url = "no_img.jpg"
+    return render_template("post.html", post=post_to_show)
 
 
 @main.route("/new-post", methods=["GET", "POST"])
