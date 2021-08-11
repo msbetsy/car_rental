@@ -125,3 +125,31 @@ def comments(count=30):
             i += 1
         except IntegrityError:
             db.session.rollback()
+
+
+def comments_comments(count=30):
+    """Add fake comments to comments to db - Comments model."""
+    fake = Faker()
+    i = 0
+    users_id = [item[0] for item in User.query.with_entities(User.id).all()]
+    # {id_comment_post : {id_parent_comment: [id_comment]}}
+    comment_id = {comment.post_id: {} for comment in Comment.query.all()}
+    for item in Comment.query.all():
+        if item.parent_comment in comment_id[item.post_id]:
+            comment_id[item.post_id][item.parent_comment].append(item.id)
+        else:
+            comment_id[item.post_id][item.parent_comment] = []
+            comment_id[item.post_id][item.parent_comment].append(item.id)
+
+    while i < count:
+        random_post = random.choice(list(comment_id.keys()))
+        comment = Comment(post_id=random_post, author_id=random.choice(users_id), text=fake.text(),
+                          date=fake.date_time(),
+                          parent_comment=random.choice(comment_id[random_post][
+                                                           random.choice(list(comment_id[random_post].keys()))]))
+        db.session.add(comment)
+        try:
+            db.session.commit()
+            i += 1
+        except IntegrityError:
+            db.session.rollback()
