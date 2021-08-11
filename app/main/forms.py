@@ -1,6 +1,6 @@
 """This module stores application forms."""
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, TextAreaField, FloatField, IntegerField
+from wtforms import StringField, SubmitField, TextAreaField, FloatField, IntegerField, HiddenField
 from flask_wtf.file import FileField, FileAllowed, FileRequired
 from wtforms.fields.html5 import TelField, DateField
 from wtforms.validators import DataRequired, Email, Length
@@ -79,3 +79,11 @@ class CommentForm(FlaskForm):
     """
     text = TextAreaField("Add comment", validators=[DataRequired()])
     submit = SubmitField("Add")
+
+
+class CommentCommentForm(FlaskForm):
+    """Class used for adding comments to comments.
+    """
+    text = TextAreaField("", validators=[DataRequired()])
+    parentID = HiddenField('', validators=[DataRequired()])
+    submit = SubmitField("Reply")
