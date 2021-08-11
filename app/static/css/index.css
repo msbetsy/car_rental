@@ -80,7 +80,8 @@ body{
     transform: translateY(-50%);
 }
 .comment{
-    padding: 10px 0 10px 0;
+    float:left;
+    padding: 10px 0 20px 0;
 }
 .commentAuthor{
     font-weight: bold;
@@ -89,6 +90,9 @@ body{
 .commentDate{
     font-size: 16px;
     text-align: left;
+}
+.commentList{
+    list-style-type:none;
 }
 .commentText{
     text-align: left;
@@ -104,7 +108,7 @@ body{
     font-size: 1.5rem;
 }
 .error{
-font-size: 1.4rem;
+    font-size: 1.4rem;
 }
 .icon{
     padding: 0 0 30px;
@@ -128,6 +132,12 @@ font-size: 1.4rem;
 }
 .opinion-form{
     padding: 10% 0 0 0;
+}
+#replybutton{
+    float:left;
+}
+#replyform {
+    padding-left: 30px;
 }
 .testimonial-image{
     border-radius: 50%;

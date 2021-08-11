@@ -12,23 +12,54 @@
 <h3 class="commentsAll">Comments:</h3>
 <hr>
 {% if not add_comment %}
-{{ wtf.quick_form(form, novalidate=True, button_map={"submit": "secondary"}) }}
+{{ wtf.quick_form(form, novalidate=True, button_map={"submit_comment": "secondary"}) }}
 {% endif %}
 <div class="col-lg-8 col-md-10">
-    {% for comment in comments: %}
-    <div class="comment">
-        <div class="commentAuthor">
-            {{comment.comment_author.name}} {{comment.comment_author.surname}}
-        </div>
-        <div class="commentDate">
-            {{(comment.date|string)[:19]}}
-        </div>
 
-        <div class="commentText">
-            {{comment.text|safe}}
-        </div>
-    </div>
-    {% endfor %}
+    <ul>
+        {% for item in comments recursive %}
+
+        <li class="commentList">
+            <div class="comment">
+                <div class="main-comment">
+                    <div class="commentAuthor">
+                        {{item.author_name}} {{item.author_surname}}
+                    </div>
+                    <div class="commentDate">
+                        {{(item.date|string)[:19]}}
+                    </div>
+                    <div class="commentText">
+                        {{ item.text }}
+                    </div>
+                </div>
+                {% if item.child %}
+                <ul class="commentList">{{ loop(item.child) }}</ul>
+                {% else %}
+
+                <div class="reply">
+                    <button id="replybutton" onclick="replybutton(this)" type="button" class="btn btn-secondary btn-sm">
+                        Reply
+                    </button>
+                    <div id="replyform" style="display:none">
+                        <form action="" method="POST">
+                            {{ form_comment.csrf_token() }}
+                            {{ form_comment.text }}
+                            {{ form_comment.parentID(value=item.id) }}
+                            <button type="submit" class="btn btn-secondary btn-sm">Reply
+                            </button>
+
+                        </form>
+                    </div>
+
+                </div>
+            </div>
+            {% endif %}
+        </li>
+
+        {% endfor %}
+
+    </ul>
+
 </div>
 
 {% endblock %}

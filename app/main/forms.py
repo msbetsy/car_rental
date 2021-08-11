@@ -78,7 +78,7 @@ class CommentForm(FlaskForm):
     """Class used for adding comments to posts.
     """
     text = TextAreaField("Add comment", validators=[DataRequired()])
-    submit = SubmitField("Add")
+    submit_comment = SubmitField("Add")
 
 
 class CommentCommentForm(FlaskForm):

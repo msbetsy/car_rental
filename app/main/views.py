@@ -6,7 +6,7 @@ from flask import render_template, flash, url_for, redirect
 from flask_login import current_user, login_required
 from werkzeug.utils import secure_filename
 from . import main
-from .forms import ContactForm, OpinionForm, CalendarForm, NewsPostForm, CarForm, CommentForm
+from .forms import ContactForm, OpinionForm, CalendarForm, NewsPostForm, CarForm, CommentForm, CommentCommentForm
 from .. import db
 from ..models import User, Opinion, Car, NewsPost, Permission, Comment
 
@@ -140,11 +140,12 @@ def show_post(post_id):
     is_file = os.path.isfile(os.path.join(basedir, 'static\img\\', post_to_show.img_url))
     if not is_file:
         post_to_show.img_url = "no_img.jpg"
-    comments_for_post = Comment.query.filter_by(post_id=post_id).order_by(Comment.date.desc()).all()
+    comments_for_post = Comment.query.filter_by(post_id=post_id).order_by(Comment.date).all()
 
+    # Add comment to post
     add_comment = False
     form = CommentForm()
-    if form.validate_on_submit():
+    if form.submit_comment.data and form.validate_on_submit():
         if not current_user.is_authenticated:
             flash("You need to login or register to comment.")
             return redirect(url_for("auth.login"))
@@ -153,14 +154,72 @@ def show_post(post_id):
             text=form.text.data,
             comment_author=current_user,
             parent_post=post_to_show,
-            date=datetime.today()
+            date=datetime.today(),
+            parent_comment=0
         )
         db.session.add(new_comment)
         db.session.commit()
         add_comment = True
 
-    return render_template("post.html", post=post_to_show, comments=comments_for_post, form=form,
-                           add_comment=add_comment)
+    # Add comment to comment
+    form_comment = CommentCommentForm()
+    if form_comment.validate_on_submit():
+        if not current_user.is_authenticated:
+            flash("You need to login or register to comment.")
+            return redirect(url_for("auth.login"))
+
+        new_comment = Comment(
+            text=form_comment.text.data,
+            comment_author=current_user,
+            parent_post=post_to_show,
+            date=datetime.today(),
+            parent_comment=form_comment.parentID.data
+        )
+        db.session.add(new_comment)
+        db.session.commit()
+
+    # Dictionary: {parent_comment: [comment_id]}
+    comment_ids = {}
+    for comment in comments_for_post:
+        if comment.parent_comment in comment_ids.keys():
+            comment_ids[comment.parent_comment].append(comment.id)
+        else:
+            comment_ids[comment.parent_comment] = []
+            comment_ids[comment.parent_comment].append(comment.id)
+
+    def make_comment_tree(number):
+        """All comments in "comment tree".
+
+        :param number: The number of parent_comment.
+        :type number: int
+        :return final: List of comments.
+        :rtype: list
+        """
+        items = comment_ids[number]
+        final = []
+        for item in items:
+            record = Comment.query.filter_by(id=item).first()
+            if item in comment_ids.keys():
+                my_dict = {"id": item,
+                           "author_name": record.comment_author.name,
+                           "author_surname": record.comment_author.surname,
+                           "text": record.text,
+                           "date": record.date,
+                           "child": make_comment_tree(item)}
+            else:
+                my_dict = {"id": item,
+                           "author_name": record.comment_author.name,
+                           "author_surname": record.comment_author.surname,
+                           "text": record.text,
+                           "date": record.date}
+            final.append(my_dict)
+        return final
+
+    comments_tree = []
+    comments_tree.extend(make_comment_tree(0))
+
+    return render_template("post.html", post=post_to_show, comments=comments_tree, form=form,
+                           add_comment=add_comment, form_comment=form_comment, comment_ids=comment_ids)
 
 
 @main.route("/new-post", methods=["GET", "POST"])
