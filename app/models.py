@@ -281,3 +281,4 @@ class Comment(db.Model):
     comment_author = relationship("User", back_populates="comments")
     text = db.Column(db.Text, nullable=False)
     date = db.Column(db.DateTime, nullable=False)
+    parent_comment = db.Column(db.Integer, nullable=True)
