@@ -2,7 +2,7 @@
 import random
 import os
 from datetime import date, datetime, timedelta
-from flask import render_template, flash, url_for, redirect
+from flask import render_template, flash, url_for, redirect, request, current_app
 from flask_login import current_user, login_required
 from werkzeug.utils import secure_filename
 from . import main
@@ -130,8 +130,13 @@ def add_opinion():
 
 @main.route("/news")
 def show_news():
-    posts = NewsPost.query.order_by(NewsPost.date.desc()).all()
-    return render_template("news.html", current_user=current_user, all_posts=posts, permission=Permission.WRITE)
+    page = request.args.get('page', 1, type=int)
+    pagination = NewsPost.query.order_by(NewsPost.date.desc()).paginate(page,
+                                                                        per_page=current_app.config['POSTS_PER_PAGE'],
+                                                                        error_out=False)
+    posts = pagination.items
+    return render_template("news.html", current_user=current_user, all_posts=posts, permission=Permission.WRITE,
+                           pagination=pagination)
 
 
 @main.route("/news/<int:post_id>", methods=["GET", "POST"])

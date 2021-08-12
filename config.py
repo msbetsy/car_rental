@@ -13,6 +13,7 @@ class Config:
     REMEMBER_COOKIE_DURATION = timedelta(minutes=10)
     PERMANENT_SESSION_LIFETIME = timedelta(minutes=60)
     CAR_ADMIN = os.environ.get('CAR_ADMIN')
+    POSTS_PER_PAGE = 10
 
     @staticmethod
     def init_app(app):
