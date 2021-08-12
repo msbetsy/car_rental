@@ -99,6 +99,7 @@ body{
     padding: 10px 0 10px 0;
 }
 .commentsAll{
+    font-size:1.5rem;
     text-align: left;
 }
 .container-advantages{
@@ -132,6 +133,22 @@ body{
 }
 .opinion-form{
     padding: 10% 0 0 0;
+}
+.post-body{
+    font-size:1.2rem;
+}
+.post-preview{
+    padding-top: 5px;
+    padding-bottom: 10px;
+}
+.post-title{
+    font-size:1.5rem;
+}
+.posted_post{
+    font-size:1.4rem;
+}
+.posted_time{
+    font-size:1.1rem;
 }
 #replybutton{
     float:left;
@@ -183,6 +200,9 @@ body{
 
 /* Different screen size */
 @media only screen and (min-width: 600px) {
+    .commentsAll posted_time{
+        font-size:1.8rem;
+    }
     .control-label{
         font-size: 1.8rem;
     }
@@ -195,6 +215,22 @@ body{
         font-size: 2.4rem;
         letter-spacing: 0.2rem;
         line-height: 1.5;
+    }
+    .post-body{
+        font-size:18.rem;
+    }
+    .post-preview{
+        padding-top: 10px;
+        padding-bottom: 20px;
+    }
+    .post-title{
+        font-size:2rem;
+    }
+    .posted_post{
+        font-size:1.8rem;
+    }
+    .posted_time{
+        font-size:1.2rem;
     }
     .small-heading{
         font-size: 2.8rem;

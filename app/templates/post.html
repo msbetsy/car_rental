@@ -5,11 +5,12 @@
 {% block small_heading %} {{post.title}} {% endblock %}
 {% block big_heading %} {{post.title}} {% endblock %}
 {% block main_text %}
-<h3>Posted on {{post.date}} by {{post.author.name}} </h3>
-<br> <br>{{post.body|safe}}
+<p class="posted_time">Posted on {{post.date}} by {{post.author.name}} </p>
+<br> <br>
+<p class="posted_post">{{post.body|safe}}</p>
 <br><br>
 <!--Show comments-->
-<h3 class="commentsAll">Comments:</h3>
+<p class="commentsAll">Comments:</p>
 {% with messages = get_flashed_messages() %}
 {% if messages %}
 {% for message in messages %}
