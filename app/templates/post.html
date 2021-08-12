@@ -10,17 +10,22 @@
 <br><br>
 <!--Show comments-->
 <h3 class="commentsAll">Comments:</h3>
-<hr>
-{% if not add_comment %}
-{{ wtf.quick_form(form, novalidate=True, button_map={"submit_comment": "secondary"}) }}
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+{% for message in messages %}
+<p>{{ message }}</p>
+{% endfor %}
 {% endif %}
+{% endwith %}
+<hr>
+{{ wtf.quick_form(form, novalidate=True, button_map={"submit_comment": "secondary"}) }}
 <div class="col-lg-8 col-md-10">
 
     <ul>
         {% for item in comments recursive %}
 
         <li class="commentList">
-            <div class="comment">
+            <div class="comment col-12">
                 <div class="main-comment">
                     <div class="commentAuthor">
                         {{item.author_name}} {{item.author_surname}}
@@ -45,9 +50,10 @@
                             {{ form_comment.csrf_token() }}
                             {{ form_comment.text }}
                             {{ form_comment.parentID(value=item.id) }}
-                            <button type="submit" class="btn btn-secondary btn-sm">Reply
-                            </button>
-
+                            <a href=" {{ url_for('main.show_post', post_id=post.id) }}">
+                                <button type="submit" class="btn btn-secondary btn-sm">Reply
+                                </button>
+                            </a>
                         </form>
                     </div>
 

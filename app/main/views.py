@@ -143,7 +143,6 @@ def show_post(post_id):
     comments_for_post = Comment.query.filter_by(post_id=post_id).order_by(Comment.date).all()
 
     # Add comment to post
-    add_comment = False
     form = CommentForm()
     if form.submit_comment.data and form.validate_on_submit():
         if not current_user.is_authenticated:
@@ -159,67 +158,79 @@ def show_post(post_id):
         )
         db.session.add(new_comment)
         db.session.commit()
-        add_comment = True
 
-    # Add comment to comment
-    form_comment = CommentCommentForm()
-    if form_comment.validate_on_submit():
-        if not current_user.is_authenticated:
-            flash("You need to login or register to comment.")
-            return redirect(url_for("auth.login"))
+        flash("Thank you for comment.")
+        return redirect(url_for("main.show_post", post_id=post_id))
 
-        new_comment = Comment(
-            text=form_comment.text.data,
-            comment_author=current_user,
-            parent_post=post_to_show,
-            date=datetime.today(),
-            parent_comment=form_comment.parentID.data
-        )
-        db.session.add(new_comment)
-        db.session.commit()
+    if len(comments_for_post) != 0:
+        # Add comment to comment
+        form_comment = CommentCommentForm()
+        if form_comment.validate_on_submit():
+            if not current_user.is_authenticated:
+                flash("You need to login or register to comment.")
+                return redirect(url_for("auth.login"))
 
-    # Dictionary: {parent_comment: [comment_id]}
-    comment_ids = {}
-    for comment in comments_for_post:
-        if comment.parent_comment in comment_ids.keys():
-            comment_ids[comment.parent_comment].append(comment.id)
-        else:
-            comment_ids[comment.parent_comment] = []
-            comment_ids[comment.parent_comment].append(comment.id)
+            new_comment = Comment(
+                text=form_comment.text.data,
+                comment_author=current_user,
+                parent_post=post_to_show,
+                date=datetime.today(),
+                parent_comment=form_comment.parentID.data
+            )
+            db.session.add(new_comment)
+            db.session.commit()
 
-    def make_comment_tree(number):
-        """All comments in "comment tree".
+            flash("Thank you for comment.")
+            return redirect(url_for("main.show_post", post_id=post_id))
 
-        :param number: The number of parent_comment.
-        :type number: int
-        :return final: List of comments.
-        :rtype: list
-        """
-        items = comment_ids[number]
-        final = []
-        for item in items:
-            record = Comment.query.filter_by(id=item).first()
-            if item in comment_ids.keys():
-                my_dict = {"id": item,
-                           "author_name": record.comment_author.name,
-                           "author_surname": record.comment_author.surname,
-                           "text": record.text,
-                           "date": record.date,
-                           "child": make_comment_tree(item)}
+        # Dictionary: {parent_comment: [comment_id]}
+        comment_ids = {}
+        for comment in comments_for_post:
+            if comment.parent_comment in comment_ids.keys():
+                comment_ids[comment.parent_comment].append(comment.id)
             else:
-                my_dict = {"id": item,
-                           "author_name": record.comment_author.name,
-                           "author_surname": record.comment_author.surname,
-                           "text": record.text,
-                           "date": record.date}
-            final.append(my_dict)
-        return final
+                comment_ids[comment.parent_comment] = []
+                comment_ids[comment.parent_comment].append(comment.id)
 
-    comments_tree = []
-    comments_tree.extend(make_comment_tree(0))
+        def make_comment_tree(number):
+            """All comments in "comment tree".
 
-    return render_template("post.html", post=post_to_show, comments=comments_tree, form=form,
-                           add_comment=add_comment, form_comment=form_comment, comment_ids=comment_ids)
+            :param number: The number of parent_comment.
+            :type number: int
+            :return final: List of comments.
+            :rtype: list
+            """
+            items = comment_ids[number]
+            final = []
+            for item in items:
+                record = Comment.query.filter_by(id=item).first()
+                if item in comment_ids.keys():
+                    my_dict = {"id": item,
+                               "author_name": record.comment_author.name,
+                               "author_surname": record.comment_author.surname,
+                               "text": record.text,
+                               "date": record.date,
+                               "child": make_comment_tree(item)}
+                else:
+                    my_dict = {"id": item,
+                               "author_name": record.comment_author.name,
+                               "author_surname": record.comment_author.surname,
+                               "text": record.text,
+                               "date": record.date}
+                final.append(my_dict)
+            return final
+
+        comments_tree = []
+        comments_tree.extend(make_comment_tree(0))
+
+    else:
+
+        form_comment = CommentCommentForm()
+        comments_tree = []
+        comment_ids = {}
+
+    return render_template("post.html", post=post_to_show, comments=comments_tree, form=form, form_comment=form_comment,
+                           comment_ids=comment_ids)
 
 
 @main.route("/new-post", methods=["GET", "POST"])
