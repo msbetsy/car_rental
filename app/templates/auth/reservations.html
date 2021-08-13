@@ -1,0 +1,26 @@
+{% extends "auth/base_user.html" %}
+
+{% block user_base %}
+<div class="row">
+    <table class="table table-reservations">
+        <thead>
+        <tr>
+            <th scope="col">Model</th>
+            <th scope="col">From date</th>
+            <th scope="col">To date</th>
+            <th scope="col"></th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <th scope="row">Car model</th>
+            <td>00-00-0000</td>
+            <td>00-00-0000</td>
+            <td><a class="btn btn-secondary btn-sm float-left" href="#">Edit</a></td>
+        </tr>
+
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}

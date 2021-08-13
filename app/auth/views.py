@@ -44,6 +44,12 @@ def show_user_data():
     return render_template("auth/data.html", current_user=current_user)
 
 
+@auth.route("/user/reservations", methods=["GET", "POST"])
+def show_user_reservations():
+    pass
+    return render_template("auth/reservations.html", current_user=current_user)
+
+
 @auth.route("/register", methods=["GET", "POST"])
 def register():
     form = RegisterForm()

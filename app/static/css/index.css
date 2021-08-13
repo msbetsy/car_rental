@@ -156,6 +156,13 @@ body{
 #replyform {
     padding-left: 30px;
 }
+table.table-reservations{
+    font-size: 0.9rem;
+}
+table.table-reservations > thead > tr > th{
+    border-bottom: 1px solid #1b304508;
+    border-top: none;
+}
 .testimonial-image{
     border-radius: 50%;
     filter: grayscale(100%);
@@ -286,6 +293,9 @@ body{
         font-size: 2.8rem;
         letter-spacing: 0.5rem;
     }
+    table.table-reservations{
+        font-size: 1.2rem;
+    }
      .testimonial-name{
         font-size: 1.4rem;
     }
@@ -295,6 +305,7 @@ body{
     .user_col{
         border-left-width: 50px;
         padding: 30px 0 30px 0;
+        border-left: 0;
     }
 }
 @media only screen and (min-width: 750px) {
