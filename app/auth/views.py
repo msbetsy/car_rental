@@ -38,6 +38,12 @@ def show_user():
     return render_template("auth/user.html", current_user=current_user)
 
 
+@auth.route("/user/data", methods=["GET", "POST"])
+def show_user_data():
+    pass
+    return render_template("auth/data.html", current_user=current_user)
+
+
 @auth.route("/register", methods=["GET", "POST"])
 def register():
     form = RegisterForm()

@@ -1,0 +1,25 @@
+{% extends "auth/base_user.html" %}
+
+{% block user_base %}
+<div class="row">
+    <div class="col-4 col-md-3 col-lg-3 mx-auto content">
+        <li class="user_li">Name:</li>
+        <li class="user_li">Surname:</li>
+        <li class="user_li">Telephone:</li>
+        <li class="user_li">Address:</li>
+    </div>
+    <div class="col-5 col-md-5 col-lg-3 mx-auto content">
+        <li class="user_li">{{ current_user.name }}</li>
+        <li class="user_li">{{ current_user.surname }}</li>
+        <li class="user_li">{{ current_user.telephone }}</li>
+        <li class="user_li">street<br>Town</li>
+    </div>
+    <div class="col-3 col-md-4 col-lg-6 mx-auto content">
+        <li class="user_li row"><a class="btn btn-secondary btn-sm float-left" href="#">Edit</a></li>
+        <li class="user_li row"><a class="btn btn-secondary btn-sm float-left" href="#">Edit</a></li>
+        <li class="user_li row"><a class="btn btn-secondary btn-sm float-left" href="#">Edit</a></li>
+        <li class="user_li row"><a class="btn btn-secondary btn-sm float-left" href="#">Edit</a></li>
+    </div>
+</div>
+
+{% endblock %}
