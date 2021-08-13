@@ -132,6 +132,7 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(250), unique=False, nullable=False)
     telephone = db.Column(db.Integer, unique=False, nullable=False)
+    address = db.Column(db.Text, nullable=True)
     opinions = relationship("Opinion", back_populates="opinion_author")
     car_rented = relationship('Rental', back_populates="users_rent")
     posts = relationship("NewsPost", back_populates="author")
