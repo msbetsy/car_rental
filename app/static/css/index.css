@@ -178,6 +178,26 @@ body{
     font-size: 1rem;
 }
 
+.user_container{
+    padding-left: 0px;
+    margin-left: 0px;
+    background-color:#f3e1e1;
+}
+.user_col{
+    background-color:#fef4f4;
+    border-left-color:#f3e1e1;
+    border-left-width: 0px;
+    border-left-style: solid;
+}
+.user_col_info{
+    background-color:#f3e1e1;
+    padding: 30px 0 30px 0;
+}
+.user_li{
+    list-style-type:none;
+    padding: 10px 0 10px 0;
+}
+
 .white-section{
     background-color: #f3e1e1;
     color: #212529;
@@ -272,6 +292,10 @@ body{
     .testimonial-text{
         font-size: 2.5rem;
        }
+    .user_col{
+        border-left-width: 50px;
+        padding: 30px 0 30px 0;
+    }
 }
 @media only screen and (min-width: 750px) {
     .mail-send{
@@ -283,4 +307,8 @@ body{
         font-size: 3rem;
         letter-spacing: 0.5rem;
     }
+    .user_col_info{
+        padding: 70px 0 30px 0 !Important;
+    }
 }
+

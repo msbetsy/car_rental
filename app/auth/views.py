@@ -32,9 +32,10 @@ def login():
     return render_template("auth/login.html", form=form, current_user=current_user)
 
 
-@auth.route("/user")
+@auth.route("/user", methods=["GET", "POST"])
 def show_user():
     pass
+    return render_template("auth/user.html", current_user=current_user)
 
 
 @auth.route("/register", methods=["GET", "POST"])
