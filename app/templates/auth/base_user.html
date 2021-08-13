@@ -18,20 +18,27 @@ Hello {{ current_user.name }}!
         <div class="col-lg-3 col-md-4 col-sm-12 mx-auto content user_col">
             <ul class="nav flex-column">
                 <li class="nav-item">
-                    <a class="nav-link" href="#">My profile</a>
+                    <a class="nav-link" href="{{ url_for('auth.show_user')}}">My profile</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#">My data</a>
+                    <a class="nav-link" href="{{ url_for('auth.show_user_data')}}">My data</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#">My reservations</a>
+                    <a class="nav-link" href="{{ url_for('auth.show_user_reservations')}}">My reservations</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#">Log out</a>
+                    <a class="nav-link" href="{{ url_for('auth.logout')}}">Log out</a>
                 </li>
             </ul>
         </div>
         <div class="col-lg-9 col-md-8 col-sm-12 mx-auto content user_col_info">
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+            {% for message in messages %}
+            <p>{{ message }}</p>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
             {% block user_base %}
             Your text
             {% endblock %}
