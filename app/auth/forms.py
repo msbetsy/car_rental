@@ -37,3 +37,13 @@ class LoginForm(FlaskForm):
     password = PasswordField("Password", validators=[DataRequired()])
     remember_user = BooleanField('Remember me')
     submit = SubmitField("Log in")
+
+
+class EditDataForm(FlaskForm):
+    """Class used for edit user data.
+    """
+    name = StringField("Name", validators=[DataRequired()])
+    surname = StringField("Surname", validators=[DataRequired()])
+    telephone = StringField("Telephone", validators=[DataRequired()])
+    address = StringField("Address")
+    submit = SubmitField("Save changes")

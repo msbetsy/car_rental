@@ -2,9 +2,9 @@
 from flask import render_template, redirect, url_for, flash, request, session
 from flask_login import current_user, logout_user, login_user
 from . import auth
-from .forms import RegisterForm, LoginForm
+from .forms import RegisterForm, LoginForm, EditDataForm
 from .. import db
-from ..models import User
+from ..models import User, Rental
 
 
 @auth.route("/login", methods=["GET", "POST"])
@@ -40,14 +40,30 @@ def show_user():
 
 @auth.route("/user/data", methods=["GET", "POST"])
 def show_user_data():
-    pass
-    return render_template("auth/data.html", current_user=current_user)
+    form = EditDataForm()
+    if form.validate_on_submit():
+        current_user.name = form.name.data
+        current_user.surname = form.surname.data
+        current_user.telephone = form.telephone.data
+        if len(form.address.data) != 0:
+            current_user.address = form.address.data
+        else:
+            current_user.address = None
+        db.session.add(current_user._get_current_object())
+        db.session.commit()
+        flash('Changes saved.')
+        return redirect(url_for('.show_user_data'))
+    form.name.data = current_user.name
+    form.surname.data = current_user.surname
+    form.telephone.data = current_user.telephone
+    form.address.data = current_user.address
+    return render_template("auth/data.html", current_user=current_user, form=form)
 
 
 @auth.route("/user/reservations", methods=["GET", "POST"])
 def show_user_reservations():
-    pass
-    return render_template("auth/reservations.html", current_user=current_user)
+    reservations = Rental.query.filter_by(users_id=current_user.id).all()
+    return render_template("auth/reservations.html", current_user=current_user, reservations=reservations)
 
 
 @auth.route("/register", methods=["GET", "POST"])

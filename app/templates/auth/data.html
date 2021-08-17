@@ -12,14 +12,20 @@
         <li class="user_li">{{ current_user.name }}</li>
         <li class="user_li">{{ current_user.surname }}</li>
         <li class="user_li">{{ current_user.telephone }}</li>
-        <li class="user_li">street<br>Town</li>
+        <li class="user_li">
+            {% if current_user.address == None %} - {% else %} {{ current_user.address }} {% endif %}
+        </li>
     </div>
-    <div class="col-3 col-md-4 col-lg-6 mx-auto content">
-        <li class="user_li row"><a class="btn btn-secondary btn-sm float-left" href="#">Edit</a></li>
-        <li class="user_li row"><a class="btn btn-secondary btn-sm float-left" href="#">Edit</a></li>
-        <li class="user_li row"><a class="btn btn-secondary btn-sm float-left" href="#">Edit</a></li>
-        <li class="user_li row"><a class="btn btn-secondary btn-sm float-left" href="#">Edit</a></li>
+    <div class="col-3 col-md-4 col-lg-6 mx-auto content align-self-end">
+        <li class="user_li row "><a class="btn btn-secondary btn-sm float-left" data-toggle="collapse"
+                                    href="#edit_data_collapse" role="button" aria-expanded="false"
+                                    aria-controls="collapseExample">Edit</a></li>
     </div>
 </div>
 
+<div class="collapse col-lg-9 col-md-8 col-sm-12 mx-auto content user_col_info" id="edit_data_collapse">
+    <div class="card card-body">
+        {{ wtf.quick_form(form, novalidate=True, button_map={"submit": "secondary btn-sm"}) }}
+    </div>
+</div>
 {% endblock %}
