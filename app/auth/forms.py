@@ -52,5 +52,17 @@ class EditDataForm(FlaskForm):
 class EditMailForm(FlaskForm):
     """Class used for edit user mail.
     """
-    new_email = StringField("Email: ", validators=[DataRequired(), Length(1, 80), Email()])
-    password = PasswordField("Password", validators=[DataRequired()])
+    new_email = StringField("", validators=[DataRequired(), Length(1, 80), Email()])
+    password = PasswordField("", validators=[DataRequired()])
+    submit_new_mail = SubmitField("Save changes")
+
+
+class EditPasswordForm(FlaskForm):
+    """Class used for edit user password.
+    """
+    old_password = PasswordField("", validators=[DataRequired()])
+    new_password = PasswordField("", validators=[DataRequired(),
+                                                 EqualTo('new_password_check',
+                                                         message='The passwords must be identical.')])
+    new_password_check = PasswordField("", validators=[DataRequired()])
+    submit_new_password = SubmitField("Save changes")
