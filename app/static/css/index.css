@@ -105,7 +105,19 @@ body{
 .container-advantages{
     padding: 2rem 0 1.3rem;
 }
-.control-label, .feedback{
+.control-label{
+    font-size: 1.3rem;
+}
+.delete-button{
+    border: 1px solid transparent;
+    border-radius: .2rem;
+    font-size: .875rem;
+    line-height: 1.5;
+    padding: .25rem .5rem;
+    transition: color .15s ease-in-out,background-color .15s ease-in-out,border-color .15s
+        ease-in-out,box-shadow .15s ease-in-out;
+}
+.feedback{
     font-size: 1.5rem;
 }
 .error{
@@ -162,6 +174,11 @@ table.table-reservations{
 table.table-reservations > thead > tr > th{
     border-bottom: 1px solid #1b304508;
     border-top: none;
+}
+.table-reservations-no{
+    font-size: 1rem;
+    margin: auto;
+    width: 50%;
 }
 .testimonial-image{
     border-radius: 50%;
@@ -261,7 +278,7 @@ table.table-reservations > thead > tr > th{
         font-size:1.8rem;
     }
     .control-label{
-        font-size: 1.8rem;
+        font-size: 1.4rem;
     }
     .feedback{
         font-size: 1.8rem;
@@ -293,7 +310,7 @@ table.table-reservations > thead > tr > th{
         font-size: 2.8rem;
         letter-spacing: 0.5rem;
     }
-    table.table-reservations{
+    table.table-reservations table-reservations-no{
         font-size: 1.2rem;
     }
      .testimonial-name{
