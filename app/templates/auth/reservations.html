@@ -2,25 +2,40 @@
 
 {% block user_base %}
 <div class="row">
+    {% if reservations|length !=0 %}
     <table class="table table-reservations">
         <thead>
         <tr>
-            <th scope="col">Model</th>
+            <th scope="col">Car name</th>
             <th scope="col">From date</th>
             <th scope="col">To date</th>
             <th scope="col"></th>
         </tr>
         </thead>
         <tbody>
+        {% for item in reservations %}
         <tr>
-            <th scope="row">Car model</th>
-            <td>00-00-0000</td>
-            <td>00-00-0000</td>
-            <td><a class="btn btn-secondary btn-sm float-left" href="#">Edit</a></td>
-        </tr>
+            <th scope="row">
+                <a href="{{ url_for('main.show_car', car_name=item.car_rent.name)}}">{{ item.car_rent.name }}</a>
+            </th>
+            <td>{{ item.from_date.replace(microsecond=0) }}</td>
+            <td>{{ item.to_date.replace(microsecond=0) }}</td>
+            <td>
 
+                <form action="{{ url_for('auth.delete_user_reservation')}}" method="POST">
+                    <input type="hidden" name="car_id" value="{{ item.cars_id }}">
+                    <input type="hidden" name="user_id" value="{{ item.users_id }}">
+                    <input type="hidden" name="from_date" value="{{ item.from_date }}">
+                    <input type="submit" class="=btn btn-secondary delete-button" value="Delete">
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
         </tbody>
     </table>
+    {% else %}
+    <div class="control-label table-reservations-no"> There are no reservations</div>
+    {% endif %}
 </div>
 
 {% endblock %}

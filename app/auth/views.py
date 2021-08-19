@@ -1,4 +1,5 @@
 """This module stores application views for authorization."""
+from datetime import datetime
 from flask import render_template, redirect, url_for, flash, request, session
 from flask_login import current_user, logout_user, login_user
 from . import auth
@@ -86,6 +87,23 @@ def show_user_data():
 def show_user_reservations():
     reservations = Rental.query.filter_by(users_id=current_user.id).all()
     return render_template("auth/reservations.html", current_user=current_user, reservations=reservations)
+
+
+@auth.route("/user/reservations/delete", methods=["GET", "POST"])
+def delete_user_reservation():
+    if request.method == 'POST':
+        car_id = int(request.form.get('car_id'))
+        user_id = int(request.form.get('user_id'))
+        try:
+            from_date = datetime.strptime(request.form.get('from_date'), "%Y-%m-%d %H:%M:%S.%f")
+            reservation = Rental.query.get({"cars_id": car_id, "users_id": user_id, "from_date": from_date})
+        except ValueError:
+            from_date = datetime.strptime(request.form.get('from_date'), "%Y-%m-%d %H:%M:%S")
+            reservation = Rental.query.get({"cars_id": car_id, "users_id": user_id, "from_date": from_date})
+        db.session.delete(reservation)
+        db.session.commit()
+        return redirect(url_for('auth.show_user_reservations'))
+    return render_template("auth/reservations.html", current_user=current_user)
 
 
 @auth.route("/register", methods=["GET", "POST"])
