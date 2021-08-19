@@ -2,7 +2,7 @@
 from flask import render_template, redirect, url_for, flash, request, session
 from flask_login import current_user, logout_user, login_user
 from . import auth
-from .forms import RegisterForm, LoginForm, EditDataForm
+from .forms import RegisterForm, LoginForm, EditDataForm, EditMailForm
 from .. import db
 from ..models import User, Rental
 
@@ -34,8 +34,17 @@ def login():
 
 @auth.route("/user", methods=["GET", "POST"])
 def show_user():
-    pass
-    return render_template("auth/user.html", current_user=current_user)
+    form = EditMailForm()
+    if form.validate_on_submit():
+        if current_user.verify_password(form.password.data):
+            current_user.email = form.new_email.data
+            db.session.add(current_user._get_current_object())
+            db.session.commit()
+            flash('Changes saved.')
+        else:
+            flash('Wrong password')
+        return redirect(url_for('.show_user'))
+    return render_template("auth/user.html", current_user=current_user, form=form)
 
 
 @auth.route("/user/data", methods=["GET", "POST"])

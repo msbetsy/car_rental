@@ -47,3 +47,10 @@ class EditDataForm(FlaskForm):
     telephone = StringField("Telephone", validators=[DataRequired()])
     address = StringField("Address")
     submit = SubmitField("Save changes")
+
+
+class EditMailForm(FlaskForm):
+    """Class used for edit user mail.
+    """
+    new_email = StringField("Email: ", validators=[DataRequired(), Length(1, 80), Email()])
+    password = PasswordField("Password", validators=[DataRequired()])

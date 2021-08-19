@@ -12,9 +12,97 @@
         <li class="user_li">********</li>
     </div>
     <div class="col-3 col-md-4 col-lg-6 mx-auto content">
-        <li class="user_li row"><a class="btn btn-secondary btn-sm float-left" href="#">Edit</a></li>
-        <li class="user_li row"><a class="btn btn-secondary btn-sm float-left" href="#">Edit</a></li>
+
+
+        <!-- Button trigger modal -->
+        <li class="user_li row">
+            <button type="button" class="btn btn-secondary btn-sm float-left" data-toggle="modal"
+                    data-target="#emailModal">
+                Edit
+            </button>
+        </li>
+        <li class="user_li row">
+            <button type="button" class="btn btn-secondary btn-sm float-left" data-toggle="modal"
+                    data-target="#passwordModal">
+                Edit
+            </button>
+        </li>
+
+
     </div>
 </div>
+
+<!-- Modal -->
+<div class="modal fade" id="emailModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
+     aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modal_email">Change email</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="editEmail" action="" method="POST">
+                {{ form.csrf_token() }}
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="user_email" class="col-form-label">New e-mail:</label>
+                        <div>
+                        <span class="error">
+                            {% if form.new_email.errors %}
+                                {% for error in form.new_email.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            {% endif %}
+                        </span>
+                        </div>
+                        <div id="user_email">{{form.new_email}}</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="user_password" class="col-form-label">Confirm by password:</label>
+                        <div id="user_password">{{form.password}}</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button id="submitEmail" type="submit" class="btn btn-info">Save changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="passwordModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
+     aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modal_password">Change password</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="form-group">
+                        <label for="user_new_password" class="col-form-label">Your new password:</label>
+                        <input type="text" class="form-control" id="user_new_password">
+                    </div>
+                    <div class="form-group">
+                        <label for="user_new_password_second" class="col-form-label">Repeat password:</label>
+                        <input type="text" class="form-control" id="user_new_password_second">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary">Save changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 {% endblock %}
