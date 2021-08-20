@@ -14,7 +14,7 @@ News
 
 {% block main_text %}
 <!-- New Post -->
-{% if current_user.can(permission) %}
+{% if current_user.can(Permission.WRITE) %}
 <div class="clearfix">
     <a class="btn btn-secondary float-left" href="{{url_for('main.add_new_post')}}">Create New Post</a>
 </div>

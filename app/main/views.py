@@ -121,7 +121,6 @@ def show_car(car_name):
                     flash("Reservation saved!")
                     return redirect(url_for('auth.show_user_reservations'))
 
-
     return render_template("car.html", form=form, car=car_to_show, current_user=current_user, car_name=car_name)
 
 
@@ -158,8 +157,7 @@ def show_news():
                                                                         per_page=current_app.config['POSTS_PER_PAGE'],
                                                                         error_out=False)
     posts = pagination.items
-    return render_template("news.html", current_user=current_user, all_posts=posts, permission=Permission.WRITE,
-                           pagination=pagination)
+    return render_template("news.html", current_user=current_user, all_posts=posts, pagination=pagination)
 
 
 @main.route("/news/<int:post_id>", methods=["GET", "POST"])
