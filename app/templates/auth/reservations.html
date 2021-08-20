@@ -20,15 +20,18 @@
             </th>
             <td>{{ item.from_date.replace(microsecond=0) }}</td>
             <td>{{ item.to_date.replace(microsecond=0) }}</td>
-            <td>
 
+            <td>
+                {% if current_user.is_admin() %}
                 <form action="{{ url_for('auth.delete_user_reservation')}}" method="POST">
                     <input type="hidden" name="car_id" value="{{ item.cars_id }}">
                     <input type="hidden" name="user_id" value="{{ item.users_id }}">
                     <input type="hidden" name="from_date" value="{{ item.from_date }}">
                     <input type="submit" class="=btn btn-secondary delete-button" value="Delete">
                 </form>
+                {% endif %}
             </td>
+
         </tr>
         {% endfor %}
         </tbody>

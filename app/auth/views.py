@@ -1,10 +1,11 @@
 """This module stores application views for authorization."""
 from datetime import datetime
 from flask import render_template, redirect, url_for, flash, request, session
-from flask_login import current_user, logout_user, login_user
+from flask_login import current_user, logout_user, login_user, login_required
 from . import auth
 from .forms import RegisterForm, LoginForm, EditDataForm, EditMailForm, EditPasswordForm
 from .. import db
+from ..decorators import admin_required
 from ..models import User, Rental
 
 
@@ -34,6 +35,7 @@ def login():
 
 
 @auth.route("/user", methods=["GET", "POST"])
+@login_required
 def show_user():
     form_mail = EditMailForm()
     if form_mail.submit_new_mail.data and form_mail.validate_on_submit():
@@ -62,6 +64,7 @@ def show_user():
 
 
 @auth.route("/user/data", methods=["GET", "POST"])
+@login_required
 def show_user_data():
     form = EditDataForm()
     if form.validate_on_submit():
@@ -84,12 +87,15 @@ def show_user_data():
 
 
 @auth.route("/user/reservations", methods=["GET", "POST"])
+@login_required
 def show_user_reservations():
     reservations = Rental.query.filter_by(users_id=current_user.id).all()
     return render_template("auth/reservations.html", current_user=current_user, reservations=reservations)
 
 
 @auth.route("/user/reservations/delete", methods=["GET", "POST"])
+@login_required
+@admin_required
 def delete_user_reservation():
     if request.method == 'POST':
         car_id = int(request.form.get('car_id'))
@@ -126,6 +132,7 @@ def register():
 
 
 @auth.route("/logout")
+@login_required
 def logout():
     logout_user()
     return redirect(url_for('main.index'))

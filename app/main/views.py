@@ -8,6 +8,7 @@ from werkzeug.utils import secure_filename
 from . import main
 from .forms import ContactForm, OpinionForm, CalendarForm, NewsPostForm, CarForm, CommentForm, CommentCommentForm
 from .. import db
+from ..decorators import moderator_required
 from ..models import User, Opinion, Car, NewsPost, Permission, Comment, Rental
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
@@ -51,6 +52,8 @@ def show_models():
 
 
 @main.route("/cars/add", methods=["GET", "POST"])
+@login_required
+@moderator_required
 def add_model():
     form = CarForm()
     if form.validate_on_submit():
@@ -260,6 +263,7 @@ def show_post(post_id):
 
 @main.route("/new-post", methods=["GET", "POST"])
 @login_required
+@moderator_required
 def add_new_post():
     form = NewsPostForm()
     if form.validate_on_submit():
