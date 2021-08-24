@@ -87,3 +87,19 @@ class CommentCommentForm(FlaskForm):
     text = TextAreaField("", validators=[DataRequired()])
     parentID = HiddenField('', validators=[DataRequired()])
     submit = SubmitField("Reply")
+
+
+class CarEditForm(FlaskForm):
+    """Class used for editing car models.
+    """
+    price = FloatField("Price", validators=[DataRequired()])
+    year = IntegerField("Year", validators=[DataRequired()])
+    model = StringField("Model", validators=[DataRequired()])
+    submit = SubmitField("Edit")
+
+
+class CarChangeImageForm(FlaskForm):
+    """Change car imagine.
+    """
+    image = FileField("Image ", validators=[FileRequired(), FileAllowed(['jpg', 'png', 'gif'], 'Images only!')])
+    submit = SubmitField("Change photo")

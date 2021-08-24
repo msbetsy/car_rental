@@ -6,9 +6,10 @@ from flask import render_template, flash, url_for, redirect, request, current_ap
 from flask_login import current_user, login_required
 from werkzeug.utils import secure_filename
 from . import main
-from .forms import ContactForm, OpinionForm, CalendarForm, NewsPostForm, CarForm, CommentForm, CommentCommentForm
+from .forms import ContactForm, OpinionForm, CalendarForm, NewsPostForm, CarForm, CommentForm, CommentCommentForm, \
+    CarEditForm, CarChangeImageForm
 from .. import db
-from ..decorators import moderator_required
+from ..decorators import admin_required, moderator_required
 from ..models import User, Opinion, Car, NewsPost, Permission, Comment, Rental
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
@@ -60,6 +61,7 @@ def add_model():
         file = form.image.data
         is_file = os.path.isfile(os.path.join(basedir, 'static\img\\', file.filename))
         filename = secure_filename(file.filename)
+
         if not is_file and allowed_file(file.filename):
             file.save(os.path.join(basedir, 'static\img\\', filename))
         new_car = Car(
@@ -122,6 +124,53 @@ def show_car(car_name):
                     return redirect(url_for('auth.show_user_reservations'))
 
     return render_template("car.html", form=form, car=car_to_show, current_user=current_user, car_name=car_name)
+
+
+@main.route("/cars/<string:car_name>/edit", methods=["GET", "POST"])
+@login_required
+@moderator_required
+def edit_car(car_name):
+    car_to_show = Car.query.filter_by(name=car_name).first()
+    form = CarEditForm()
+    if form.validate_on_submit():
+        car_to_show.price = form.price.data
+        car_to_show.year = form.year.data
+        car_to_show.model = form.model.data
+
+        db.session.add(car_to_show)
+        db.session.commit()
+        flash('Changes saved.')
+        return redirect(url_for('.show_car', car_name=car_name))
+
+    form.price.data = car_to_show.price
+    form.year.data = car_to_show.year
+    form.model.data = car_to_show.model
+
+    return render_template("car_edit.html", form=form, car=car_to_show, current_user=current_user, car_name=car_name)
+
+
+@main.route("/cars/<string:car_name>/change_photo", methods=["GET", "POST"])
+@login_required
+@moderator_required
+def change_car_photo(car_name):
+    car_to_show = Car.query.filter_by(name=car_name).first()
+    form = CarChangeImageForm()
+    if form.validate_on_submit():
+
+        file = form.image.data
+        is_file = os.path.isfile(os.path.join(basedir, 'static\img\\', file.filename))
+        filename = secure_filename(file.filename)
+        if not is_file and allowed_file(file.filename):
+            file.save(os.path.join(basedir, 'static\img\\', filename))
+        car_to_show.image = filename
+
+        db.session.add(car_to_show)
+        db.session.commit()
+        flash('Changes saved.')
+        return redirect(url_for('.show_car', car_name=car_name))
+
+    return render_template("change_car_imagine.html", form=form, car=car_to_show, current_user=current_user,
+                           car_name=car_name)
 
 
 @main.route("/opinions", methods=["GET", "POST"])
