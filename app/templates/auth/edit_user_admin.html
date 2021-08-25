@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block imagine %}
+<img class="image" src="{{url_for('static', filename='img/edit.jpg')}}" alt="edit">
+{% endblock %}
+
+{% block small_heading %}
+<p>{{ user.name }}</p>
+<p>{{ user.surname }}</p>
+{% endblock %}
+
+{% block big_heading %}
+<p>{{ user.name }}</p>
+<p>{{ user.surname }}</p>
+{% endblock %}
+
+{% block main_text %}
+{{ wtf.quick_form(form, novalidate=True, button_map={"submit": "secondary"}) }}
+{% endblock %}

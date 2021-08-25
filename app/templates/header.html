@@ -19,6 +19,8 @@
 
 
 
+
+
     </style>
 
     <!-- Font Awesome -->
@@ -58,7 +60,9 @@
                             <a class="dropdown-item" href="{{ url_for('main.add_opinion')}}">Opinions</a>
                         </div>
                     </li>
-
+                    {% if current_user.can(Permission.ADMIN) %}
+                    <a class="nav-link" href="{{ url_for('auth.users')}}">Users</a>
+                    {% endif %}
                     {% if not current_user.is_authenticated: %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('auth.register')}}">Register</a>

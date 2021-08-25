@@ -3,10 +3,10 @@ from datetime import datetime
 from flask import render_template, redirect, url_for, flash, request, session
 from flask_login import current_user, logout_user, login_user, login_required
 from . import auth
-from .forms import RegisterForm, LoginForm, EditDataForm, EditMailForm, EditPasswordForm
+from .forms import RegisterForm, LoginForm, EditDataForm, EditMailForm, EditPasswordForm, EditUserAdminForm
 from .. import db
 from ..decorators import admin_required
-from ..models import User, Rental
+from ..models import User, Rental, Role
 
 
 @auth.route("/login", methods=["GET", "POST"])
@@ -93,6 +93,48 @@ def show_user_reservations():
     return render_template("auth/reservations.html", current_user=current_user, reservations=reservations)
 
 
+@auth.route("/users", methods=["GET", "POST"])
+@login_required
+@admin_required
+def users():
+    users = User.query.all()
+    return render_template("auth/users.html", current_user=current_user, users=users)
+
+
+@auth.route("/edit-user/<int:user_id>", methods=["GET", "POST"])
+@login_required
+@admin_required
+def edit_user_admin(user_id):
+    user = User.query.get_or_404(user_id)
+    form = EditUserAdminForm(user=user)
+    if form.validate_on_submit():
+        user.name = form.name.data
+        user.surname = form.surname.data
+        user.email = form.email.data
+        user.role = Role.query.get(form.role.data)
+        user.telephone = form.telephone.data
+        user.address = form.address.data
+        db.session.add(user)
+        db.session.commit()
+        flash('The profile has been updated.')
+        return redirect(url_for('auth.users'))
+    form.name.data = user.name
+    form.surname.data = user.surname
+    form.email.data = user.email
+    form.role.data = user.role_id
+    form.telephone.data = user.telephone
+    form.address.data = user.address
+    return render_template("auth/edit_user_admin.html", current_user=current_user, user=user, form=form)
+
+
+@auth.route("/user/<int:user_id>/reservations", methods=["GET", "POST"])
+@login_required
+@admin_required
+def show_user_reservations_admin(user_id):
+    reservations = Rental.query.filter_by(users_id=user_id).all()
+    return render_template("auth/edit_reservations_admin.html", current_user=current_user, reservations=reservations)
+
+
 @auth.route("/user/reservations/delete", methods=["GET", "POST"])
 @login_required
 @admin_required
@@ -108,8 +150,9 @@ def delete_user_reservation():
             reservation = Rental.query.get({"cars_id": car_id, "users_id": user_id, "from_date": from_date})
         db.session.delete(reservation)
         db.session.commit()
-        return redirect(url_for('auth.show_user_reservations'))
-    return render_template("auth/reservations.html", current_user=current_user)
+        flash('Deleted')
+        return redirect(url_for('auth.show_user_reservations_admin', user_id=user_id))
+    return render_template("auth/edit_reservations_admin.html", current_user=current_user)
 
 
 @auth.route("/register", methods=["GET", "POST"])

@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block imagine %}
+<img class="image" src="{{url_for('static', filename='img/edit.jpg')}}" alt="edit">
+{% endblock %}
+
+{% block small_heading %}
+Users
+{% endblock %}
+
+{% block big_heading %}
+Users
+{% endblock %}
+
+{% block main_text %}
+<table class="table">
+    <thead>
+    <tr>
+        <th scope="col">Name</th>
+        <th scope="col">Email</th>
+        <th scope="col"></th>
+    </tr>
+    </thead>
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    {% for message in messages %}
+    <p>{{ message }}</p>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+    <tbody>
+    {% for user in users %}
+    <tr>
+        <th scope="row"> {{ user.name }}</th>
+        <td>{{ user.email }}</td>
+        <td>
+            <a class="btn btn-secondary float-left" href="{{url_for('auth.edit_user_admin', user_id=user.id)}}">Edit
+                data</a>
+        </td>
+        <td>
+            <a class="btn btn-secondary float-left"
+               href="{{url_for('auth.show_user_reservations_admin', user_id=user.id)}}">Edit
+                reservations</a>
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}
