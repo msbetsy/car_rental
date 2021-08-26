@@ -1,9 +1,9 @@
 """This module stores application forms for authorization."""
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, BooleanField, SelectField
+from wtforms import StringField, PasswordField, SubmitField, BooleanField, SelectField, DateTimeField
 from wtforms.validators import DataRequired, Length, Email, EqualTo
 from wtforms import ValidationError
-from ..models import User, Role
+from ..models import User, Role, Car
 
 
 class RegisterForm(FlaskForm):
@@ -103,3 +103,18 @@ class EditUserAdminForm(FlaskForm):
         """
         if field.data != self.user.email and User.query.filter_by(email=field.data.lower()).first():
             raise ValidationError('Email exists.')
+
+
+class AddReservationAdminForm(FlaskForm):
+    """Class used for add new reservation by Admin.
+    """
+    name = SelectField('Rental', coerce=int)
+    from_date_time = DateTimeField("From datetime", validators=[DataRequired()],
+                                   render_kw={"placeholder": "yyyy-MM-DD HH:mm:ss"})
+    to_date_time = DateTimeField("To datetime", validators=[DataRequired()],
+                                 render_kw={"placeholder": "yyyy-MM-DD HH:mm:ss"})
+    submit = SubmitField("Add")
+
+    def __init__(self, *args, **kwargs):
+        super(AddReservationAdminForm, self).__init__(*args, **kwargs)
+        self.name.choices = [(car.id, car.name) for car in Car.query.order_by(Car.name).all()]
