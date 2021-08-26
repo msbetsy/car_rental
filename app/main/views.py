@@ -93,9 +93,8 @@ def show_car(car_name):
         if len(rental_list) != 0:
             for element in rental_list:
                 available_date = False
-                datetime_available_from = element.from_date + timedelta(minutes=-61)
-                if datetime_available_from <= from_datetime <= element.available_from or \
-                        datetime_available_from <= to_datetime <= element.available_from:
+                if element.from_date <= from_datetime <= element.available_from or \
+                        element.from_date <= to_datetime + timedelta(hours=1) <= element.available_from:
                     flash("Change dates!")
                     flash(" ".join(("Available before: ", str(element.from_date + timedelta(minutes=-61))[:-3])))
                     flash(" ".join(("Available after: ", str(element.available_from + timedelta(minutes=1))[:-3])))
@@ -103,8 +102,8 @@ def show_car(car_name):
                 else:
                     available_date = True
 
-                if from_datetime < datetime_available_from < element.available_from and \
-                        datetime_available_from < element.available_from < to_datetime:
+                if from_datetime < element.from_date < element.available_from and \
+                        element.from_date < element.available_from < to_datetime + timedelta(hours=1):
                     available_date = False
                     flash("Change dates!")
                     flash(" ".join(("Available before:", str(element.from_date + timedelta(minutes=-61))[:-3])))
@@ -116,12 +115,24 @@ def show_car(car_name):
                                   users_id=current_user.id,
                                   from_date=from_datetime,
                                   to_date=to_datetime,
-                                  available_from=datetime_available_from)
+                                  available_from=to_datetime + timedelta(hours=1))
 
                     db.session.add(rent)
                     db.session.commit()
                     flash("Reservation saved!")
                     return redirect(url_for('auth.show_user_reservations'))
+        else:
+            if from_datetime < to_datetime:
+                rent = Rental(cars_id=car_to_show.id,
+                              users_id=current_user.id,
+                              from_date=from_datetime,
+                              to_date=to_datetime,
+                              available_from=to_datetime + timedelta(hours=1))
+
+                db.session.add(rent)
+                db.session.commit()
+                flash("Reservation saved!")
+                return redirect(url_for('auth.show_user_reservations'))
 
     return render_template("car.html", form=form, car=car_to_show, current_user=current_user, car_name=car_name)
 
