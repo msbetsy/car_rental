@@ -13,6 +13,12 @@ Users
 
 {% block main_text %}
 <div class="row">
+    <div class="clearfix">
+        <a class="btn btn-secondary float-left"
+           href="{{url_for('auth.add_reservation', user_id=request.path.split('/')[-2] | int)}}">Add
+            reservation</a>
+    </div>
+
     {% with messages = get_flashed_messages() %}
     {% if messages %}
     {% for message in messages %}

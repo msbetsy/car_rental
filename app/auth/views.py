@@ -1,12 +1,13 @@
 """This module stores application views for authorization."""
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import render_template, redirect, url_for, flash, request, session
 from flask_login import current_user, logout_user, login_user, login_required
 from . import auth
-from .forms import RegisterForm, LoginForm, EditDataForm, EditMailForm, EditPasswordForm, EditUserAdminForm
+from .forms import RegisterForm, LoginForm, EditDataForm, EditMailForm, EditPasswordForm, EditUserAdminForm, \
+    AddReservationAdminForm
 from .. import db
-from ..decorators import admin_required
-from ..models import User, Rental, Role
+from ..decorators import admin_required, moderator_required
+from ..models import User, Rental, Role, Car, load_user
 
 
 @auth.route("/login", methods=["GET", "POST"])
@@ -133,6 +134,64 @@ def edit_user_admin(user_id):
 def show_user_reservations_admin(user_id):
     reservations = Rental.query.filter_by(users_id=user_id).all()
     return render_template("auth/edit_reservations_admin.html", current_user=current_user, reservations=reservations)
+
+
+@auth.route("/user/reservations/add/user/<int:user_id>", methods=["GET", "POST"])
+@login_required
+@admin_required
+def add_reservation(user_id):
+    form = AddReservationAdminForm()
+    user = load_user(user_id)
+    if form.validate_on_submit():
+        car = Car.query.get(form.name.data)
+        reservations = Rental.query.filter_by(cars_id=car.id, users_id=user.id).all()
+        if form.from_date_time.data >= form.to_date_time.data:
+            flash("Dates Error!")
+        else:
+            if len(reservations) == 0:
+                new_reservation = Rental(cars_id=car.id, users_id=user.id, from_date=form.from_date_time.data,
+                                         to_date=form.to_date_time.data,
+                                         available_from=form.to_date_time.data + timedelta(hours=1))
+                db.session.add(new_reservation)
+                db.session.commit()
+                flash('Reservation added.')
+                return redirect(url_for('auth.show_user_reservations_admin', user_id=user_id))
+            else:
+                for reservation in reservations:
+                    available_date = False
+                    rental_from = form.from_date_time.data
+                    rental_to = form.to_date_time.data + timedelta(hours=1)
+                    if reservation.from_date <= rental_from <= reservation.available_from or \
+                            reservation.from_date <= rental_to <= reservation.available_from:
+                        flash("Change dates!")
+                        flash(
+                            " ".join(("Available before: ", str(reservation.from_date + timedelta(minutes=-61))[:-3])))
+                        flash(" ".join(
+                            ("Available after: ", str(reservation.available_from + timedelta(minutes=1))[:-3])))
+                        break
+                    else:
+                        available_date = True
+
+                    if rental_from < reservation.from_date < reservation.available_from and \
+                            reservation.from_date < reservation.available_from < rental_to:
+                        available_date = False
+                        flash("Change dates!")
+                        flash(" ".join(("Available before:", str(reservation.from_date + timedelta(minutes=-61))[:-3])))
+                        flash(" ".join(
+                            ("Available after: ", str(reservation.available_from + timedelta(minutes=1))[:-3])))
+                        break
+
+                    if available_date:
+                        new_reservation = Rental(cars_id=car.id, users_id=user.id, from_date=form.from_date_time.data,
+                                                 to_date=form.to_date_time.data,
+                                                 available_from=form.to_date_time.data + timedelta(hours=1))
+
+                        db.session.add(new_reservation)
+                        db.session.commit()
+                        flash("Reservation saved!")
+                        return redirect(url_for('auth.show_user_reservations_admin', user_id=user_id))
+
+    return render_template("auth/new_reservation.html", current_user=current_user, form=form)
 
 
 @auth.route("/user/reservations/delete", methods=["GET", "POST"])
