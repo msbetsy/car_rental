@@ -12,7 +12,7 @@ Users
 {% endblock %}
 
 {% block main_text %}
-<table class="table">
+<table class="table table-reservations">
     <thead>
     <tr>
         <th scope="col">Name</th>
@@ -33,13 +33,14 @@ Users
         <th scope="row"> {{ user.name }}</th>
         <td>{{ user.email }}</td>
         <td>
-            <a class="btn btn-secondary float-left" href="{{url_for('auth.edit_user_admin', user_id=user.id)}}">Edit
-                data</a>
+            <a class="btn btn-secondary btn-sm float-left" href="{{url_for('auth.edit_user_admin', user_id=user.id)}}">
+                Edit data
+            </a>
         </td>
         <td>
-            <a class="btn btn-secondary float-left"
+            <a class="btn btn-secondary btn-sm float-left"
                href="{{url_for('auth.show_user_reservations_admin', user_id=user.id)}}">Edit
-                reservations</a>
+                rentals</a>
         </td>
     </tr>
     {% endfor %}
