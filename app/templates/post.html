@@ -5,12 +5,12 @@
 {% block small_heading %} {{post.title}} {% endblock %}
 {% block big_heading %} {{post.title}} {% endblock %}
 {% block main_text %}
-<p class="posted_time">Posted on {{post.date}} by {{post.author.name}} </p>
+<p class="posted-time">Posted on {{post.date}} by {{post.author.name}} </p>
 <br> <br>
-<p class="posted_post">{{post.body|safe}}</p>
+<p class="posted-post">{{post.body|safe}}</p>
 <br><br>
 <!--Show comments-->
-<p class="commentsAll">Comments:</p>
+<p class="comments-all">Comments:</p>
 {% with messages = get_flashed_messages() %}
 {% if messages %}
 {% for message in messages %}
@@ -25,21 +25,21 @@
     <ul>
         {% for item in comments recursive %}
 
-        <li class="commentList">
+        <li class="comment-list">
             <div class="comment col-12">
                 <div class="main-comment">
-                    <div class="commentAuthor">
+                    <div class="comment-author">
                         {{item.author_name}} {{item.author_surname}}
                     </div>
-                    <div class="commentDate">
+                    <div class="comment-date">
                         {{(item.date|string)[:19]}}
                     </div>
-                    <div class="commentText">
+                    <div class="comment-text">
                         {{ item.text }}
                     </div>
                 </div>
                 {% if item.child %}
-                <ul class="commentList">{{ loop(item.child) }}</ul>
+                <ul class="comment-list">{{ loop(item.child) }}</ul>
                 {% else %}
 
                 <div class="reply">
@@ -57,16 +57,12 @@
                             </a>
                         </form>
                     </div>
-
                 </div>
             </div>
             {% endif %}
         </li>
-
         {% endfor %}
-
     </ul>
-
 </div>
 
 {% endblock %}

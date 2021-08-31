@@ -15,7 +15,7 @@ Hello {{ current_user.name }}!
 
 <div class=" user_container">
     <div class="row">
-        <div class="col-lg-3 col-md-4 col-sm-12 mx-auto content user_col">
+        <div class="col-lg-3 col-md-4 col-sm-12 mx-auto content user-col">
             <ul class="nav flex-column">
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('auth.show_user')}}">My profile</a>
@@ -31,7 +31,7 @@ Hello {{ current_user.name }}!
                 </li>
             </ul>
         </div>
-        <div class="col-lg-9 col-md-8 col-sm-12 mx-auto content user_col_info">
+        <div class="col-lg-9 col-md-8 col-sm-12 mx-auto content user-col-info">
             {% with messages = get_flashed_messages() %}
             {% if messages %}
             {% for message in messages %}

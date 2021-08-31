@@ -3,27 +3,27 @@
 {% block user_base %}
 <div class="row">
     <div class="col-4 col-md-3 col-lg-3 mx-auto content">
-        <li class="user_li">Name:</li>
-        <li class="user_li">Surname:</li>
-        <li class="user_li">Telephone:</li>
-        <li class="user_li">Address:</li>
+        <li class="user-li">Name:</li>
+        <li class="user-li">Surname:</li>
+        <li class="user-li">Telephone:</li>
+        <li class="user-li">Address:</li>
     </div>
     <div class="col-5 col-md-5 col-lg-3 mx-auto content">
-        <li class="user_li">{{ current_user.name }}</li>
-        <li class="user_li">{{ current_user.surname }}</li>
-        <li class="user_li">{{ current_user.telephone }}</li>
-        <li class="user_li">
+        <li class="user-li">{{ current_user.name }}</li>
+        <li class="user-li">{{ current_user.surname }}</li>
+        <li class="user-li">{{ current_user.telephone }}</li>
+        <li class="user-li">
             {% if current_user.address == None %} - {% else %} {{ current_user.address }} {% endif %}
         </li>
     </div>
     <div class="col-3 col-md-4 col-lg-6 mx-auto content align-self-end">
-        <li class="user_li row "><a class="btn btn-secondary btn-sm float-left" data-toggle="collapse"
+        <li class="user-li row "><a class="btn btn-secondary btn-sm float-left" data-toggle="collapse"
                                     href="#edit_data_collapse" role="button" aria-expanded="false"
                                     aria-controls="collapseExample">Edit</a></li>
     </div>
 </div>
 
-<div class="collapse col-lg-9 col-md-8 col-sm-12 mx-auto content user_col_info" id="edit_data_collapse">
+<div class="collapse col-lg-9 col-md-8 col-sm-12 mx-auto content user-col-info" id="edit_data_collapse">
     <div class="card card-body">
         {{ wtf.quick_form(form, novalidate=True, button_map={"submit": "secondary btn-sm"}) }}
     </div>

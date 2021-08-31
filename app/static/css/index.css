@@ -83,22 +83,22 @@ body{
     float:left;
     padding: 10px 0 20px 0;
 }
-.commentAuthor{
+.comment-author{
     font-weight: bold;
     text-align: left;
 }
-.commentDate{
+.comment-date{
     font-size: 16px;
     text-align: left;
 }
-.commentList{
+.comment-list{
     list-style-type:none;
 }
-.commentText{
+.comment-text{
     text-align: left;
     padding: 10px 0 10px 0;
 }
-.commentsAll{
+.comments-all{
     font-size:1.5rem;
     text-align: left;
 }
@@ -156,10 +156,10 @@ body{
 .post-title{
     font-size:1.5rem;
 }
-.posted_post{
+.posted-post{
     font-size:1.4rem;
 }
-.posted_time{
+.posted-time{
     font-size:1.1rem;
 }
 #replybutton{
@@ -207,17 +207,17 @@ table.table-reservations > thead > tr > th{
     margin-left: 0px;
     background-color:#f3e1e1;
 }
-.user_col{
+.user-col{
     background-color:#fef4f4;
     border-left-color:#f3e1e1;
     border-left-width: 0px;
     border-left-style: solid;
 }
-.user_col_info{
+.user-col-info{
     background-color:#f3e1e1;
     padding: 30px 0 30px 0;
 }
-.user_li{
+.user-li{
     list-style-type:none;
     padding: 10px 0 10px 0;
 }
@@ -226,6 +226,9 @@ table.table-reservations > thead > tr > th{
     background-color: #f3e1e1;
     color: #212529;
     padding: 4rem 0 3rem;
+}
+.whole-card{
+    width: 20rem;
 }
 /* Pagination */
 
@@ -274,7 +277,7 @@ table.table-reservations > thead > tr > th{
 
 /* Different screen size */
 @media only screen and (min-width: 600px) {
-    .commentsAll posted_time{
+    .comments-all posted-time{
         font-size:1.8rem;
     }
     .control-label{
@@ -300,10 +303,10 @@ table.table-reservations > thead > tr > th{
     .post-title{
         font-size:2rem;
     }
-    .posted_post{
+    .posted-post{
         font-size:1.8rem;
     }
-    .posted_time{
+    .posted-time{
         font-size:1.2rem;
     }
     .small-heading{
@@ -319,7 +322,7 @@ table.table-reservations > thead > tr > th{
     .testimonial-text{
         font-size: 2.5rem;
        }
-    .user_col{
+    .user-col{
         border-left-width: 50px;
         padding: 30px 0 30px 0;
         border-left: 0;
@@ -335,8 +338,7 @@ table.table-reservations > thead > tr > th{
         font-size: 3rem;
         letter-spacing: 0.5rem;
     }
-    .user_col_info{
+    .user-col-info{
         padding: 70px 0 30px 0 !Important;
     }
 }
-

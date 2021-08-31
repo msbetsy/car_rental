@@ -1,19 +1,16 @@
 {% extends "base.html" %}
 {% block imagine %}
-    <img class="image" src="{{url_for('static', filename='img/register.jpg')}}" alt="login_image">
+<img class="image" src="{{url_for('static', filename='img/register.jpg')}}" alt="register_image">
 {% endblock %}
 
 {% block small_heading %}
-    Register
+Register
 {% endblock %}
 
 {% block big_heading %}
-    Register
+Register
 {% endblock %}
 
 {% block main_text %}
-    {{ wtf.quick_form(form, novalidate=True, button_map={"submit": "secondary"}) }}
+{{ wtf.quick_form(form, novalidate=True, button_map={"submit": "secondary"}) }}
 {% endblock %}
-
-
-

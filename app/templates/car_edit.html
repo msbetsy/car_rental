@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block imagine %}
-<img class="image" src="{{url_for('static', filename='img/'+car.image)}}" alt="news_image">
+<img class="image" src="{{url_for('static', filename='img/'+car.image)}}" alt="car_imagine">
 {% endblock %}
 
 {% block small_heading %}
@@ -13,4 +13,3 @@
 {% block main_text %}
 {{ wtf.quick_form(form, novalidate=True, button_map={"submit": "secondary"}) }}
 {% endblock %}
-

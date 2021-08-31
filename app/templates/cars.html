@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block imagine %}
-<img class="image" src="{{url_for('static', filename='img/model.jpg')}}" alt="news_image">
+<img class="image" src="{{url_for('static', filename='img/model.jpg')}}" alt="model_imagine">
 {% endblock %}
 
 {% block small_heading %}
@@ -28,7 +28,7 @@ Car models
             {% if car_number!= 0: %}
             {% for car in all_cars %}
             <div class="car-column col-lg-4 col-md-6">
-                <div class="card mx-auto" style="width: 20rem;">
+                <div class="card mx-auto whole-card">
                     <img src="{{url_for('static', filename='img/'+car.image)}}" class="card-img-top" alt="car1">
                     <div class="card-body">
                         <a href="{{url_for('main.show_car',car_name=car.name)}}"><p class="card-text">{{car.name}} </p>
