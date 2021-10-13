@@ -31,7 +31,14 @@ class DevelopmentConfig(Config):
     SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URL') or 'sqlite:///' + os.path.join(basedir, 'db.sqlite')
 
 
+class TestingConfig(Config):
+    """Class contains test unit tests."""
+    TESTING = True
+    SQLALCHEMY_DATABASE_URI = os.environ.get('TEST_DATABASE_URL') or 'sqlite://'
+
+
 config = {
     'development': DevelopmentConfig,
+    'testing': TestingConfig,
     'default': DevelopmentConfig
 }

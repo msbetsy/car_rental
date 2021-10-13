@@ -2,7 +2,7 @@
 import os
 from flask_migrate import Migrate
 from app import create_app, db
-from app.models import User, Role
+from app.models import User, Role, Permission, NewsPost, Comment, Car, Rental, Opinion
 
 app = create_app(os.getenv('FLASK_CONFIG') or 'default')
 migrate = Migrate(app, db, render_as_batch=True)
@@ -15,8 +15,18 @@ def make_shell_context():
     :return: Shell context.
     :rtype: dict
     """
-    return dict(app=app, db=db, User=User, Role=Role)
+    # return dict(app=app, db=db, User=User, Role=Role, Permission=Permission, Car=Car, NewsPost=NewsPost,
+    #             Comment=Comment, Rental=Rental, Opinion=Opinion)
+    return dict(db=db, User=User, Role=Role, Permission=Permission, Car=Car, NewsPost=NewsPost, Comment=Comment,
+                Rental=Rental, Opinion=Opinion)
 
 
-if __name__ == '__main__':
-    app.run()
+@app.cli.command()
+def test():
+    """Run the unit tests."""
+    import unittest
+    tests = unittest.TestLoader().discover('tests')
+    unittest.TextTestRunner(verbosity=2).run(tests)
+
+# if __name__ == '__main__':
+#     app.run()
