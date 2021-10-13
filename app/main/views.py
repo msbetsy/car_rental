@@ -9,7 +9,7 @@ from . import main
 from .forms import ContactForm, OpinionForm, CalendarForm, NewsPostForm, CarForm, CommentForm, CommentCommentForm, \
     CarEditForm, CarChangeImageForm
 from .. import db
-from ..decorators import admin_required, moderator_required
+from ..decorators import moderator_required
 from ..models import User, Opinion, Car, NewsPost, Permission, Comment, Rental
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
