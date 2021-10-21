@@ -2,17 +2,23 @@
 import os
 from datetime import timedelta
 
+from dotenv import load_dotenv
+
 basedir = os.path.abspath(os.path.dirname(__file__))
+
+env_file = os.path.join(basedir, '.env')
+load_dotenv(env_file)
 
 
 class Config:
     """Class contains general application configuration settings.
     """
     SECRET_KEY = os.environ.get("SECRET_KEY_CAR") or 'sjk897JH7KH65#(@&'
+    TESTING = False
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     REMEMBER_COOKIE_DURATION = timedelta(minutes=10)
     PERMANENT_SESSION_LIFETIME = timedelta(minutes=60)
-    CAR_ADMIN = os.environ.get('CAR_ADMIN')
+    CAR_ADMIN = os.environ.get('CAR_ADMIN') or 'mail@mail.com'
     POSTS_PER_PAGE = 10
 
     @staticmethod
