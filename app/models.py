@@ -1,9 +1,13 @@
 """This module stores models used in application."""
+from datetime import datetime, timedelta
 from flask_login import UserMixin, AnonymousUserMixin
-from flask import current_app
+from flask import current_app, url_for
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.orm import relationship
 from sqlalchemy import Column, ForeignKey
+import jwt
+from email_validator import validate_email
+from app.exceptions import ValidationError
 from . import db, login_manager
 
 
@@ -179,6 +183,8 @@ class User(UserMixin, db.Model):
 
         :param password: User's password.
         :type password: str
+        :return: Hashed and salted password.
+        :rtype: str
         """
         hash_and_salted_password = generate_password_hash(
             password,
@@ -186,6 +192,7 @@ class User(UserMixin, db.Model):
             salt_length=8
         )
         self.password_hash = hash_and_salted_password
+        return hash_and_salted_password
 
     def verify_password(self, password):
         """Check if password is correct.
@@ -205,6 +212,21 @@ class User(UserMixin, db.Model):
         """
         user_mail = '<User %r>' % self.email
         return user_mail
+
+    def to_json(self):
+        """Convert user object to json.
+
+        :return json_user: user's data in dict
+        :rtype: dict
+        """
+        json_user = {
+            'name': self.name,
+            'post_count': len(self.posts),
+            'rentals_count': len(self.car_rented),
+            'comments_count': len(self.comments),
+            'opinions_count': len(self.opinions)
+        }
+        return json_user
 
 
 @login_manager.user_loader
