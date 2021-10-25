@@ -20,6 +20,7 @@ class Config:
     PERMANENT_SESSION_LIFETIME = timedelta(minutes=60)
     CAR_ADMIN = os.environ.get('CAR_ADMIN') or 'mail@mail.com'
     POSTS_PER_PAGE = 10
+    JWT_EXPIRED_MINUTES = 10
 
     @staticmethod
     def init_app(app):

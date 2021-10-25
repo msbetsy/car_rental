@@ -216,7 +216,7 @@ class User(UserMixin, db.Model):
     def to_json(self):
         """Convert user object to json.
 
-        :return json_user: user's data in dict
+        :return json_user: user's data in dict.
         :rtype: dict
         """
         json_user = {
@@ -227,6 +227,62 @@ class User(UserMixin, db.Model):
             'opinions_count': len(self.opinions)
         }
         return json_user
+
+    @staticmethod
+    def from_json(json_data):
+        """Create User object from json data.
+
+        :param json_data: Data in json.
+        :type json_data: dict
+        :raises ValidationError: wrong attribute
+        :return: User object.
+        :rtype: object
+        """
+        name = json_data.get('name')
+        surname = json_data.get('surname')
+        email = json_data.get('email')
+        password = json_data.get('password')
+        telephone = json_data.get('telephone')
+        try:
+            address = json_data.get('address')
+        except KeyError:
+            address = None
+        check_if_null(name, "name")
+        check_if_null(surname, "surname")
+        check_if_null(password, "password")
+        check_if_null(email, "email")
+        if len(email) > 80:
+            raise ValidationError('Maximum number of characters is 80.', 'email')
+        if not validate_email(email):
+            raise ValidationError("Email is incorrect.", "email")
+        check_if_null(telephone, "telephone")
+        return User(name=name, surname=surname, password_hash=generate_password_hash(password), email=email,
+                    telephone=telephone, address=address)
+
+    def generate_jwt_token(self):
+        """Generates jwt token.
+
+        :return: JWT token.
+        :rtype: str
+        """
+        payload = {
+            'user_id': self.id,
+            'exp': datetime.utcnow() + timedelta(minutes=current_app.config.get('JWT_EXPIRED_MINUTES', 10))
+        }
+        return jwt.encode(payload, current_app.config.get('SECRET_KEY'), algorithm='HS256')
+
+
+def check_if_null(variable, variable_name):
+    """Check if value in json dict is null or None.
+
+    :param variable: Data from json.
+    :type variable: str
+    :param variable_name: Name of variable.
+    :type variable_name: str
+    :raises ValidationError: variable can't be null.
+    """
+    if variable is None or variable == '':
+        raise ValidationError(f"{variable_name} can't be null", variable_name)
 
 
 @login_manager.user_loader
