@@ -26,6 +26,12 @@ def forbidden(message):
     return response
 
 
+def conflict(message):
+    response = jsonify({'error': 'conflict', 'message': message, 'success': False})
+    response.status_code = 409
+    return response
+
+
 @api.errorhandler(ValidationError)
 def validation_error(e):
     """Method used for validation new data."""
