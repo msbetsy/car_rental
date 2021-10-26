@@ -1,8 +1,8 @@
-from flask import jsonify, request
+from flask import jsonify, request, g
 from ..models import User
 from . import api
 from app.api.errors import conflict, bad_request, unauthorized
-from app.api.decorators import validate_json_content_type
+from app.api.decorators import validate_json_content_type, token_required
 from .. import db
 
 
@@ -42,3 +42,10 @@ def login():
     token = user.generate_jwt_token()
 
     return jsonify({'success': True, 'token': token})
+
+
+@api.route('/auth/about_me/', methods=['GET'])
+@token_required
+def get_current_user(user_id):
+    user = User.query.get_or_404(user_id, description=f'User with id {user_id} not found')
+    return jsonify({'success': True, 'data': user.to_json_user_data()})

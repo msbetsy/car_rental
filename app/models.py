@@ -228,6 +228,24 @@ class User(UserMixin, db.Model):
         }
         return json_user
 
+    def to_json_user_data(self):
+        """Convert user object to json.
+
+        :return json_user: user's data in dict.
+        :rtype: dict
+        """
+        json_user = {
+            'name': self.name,
+            'surname': self.surname,
+            'telephone': self.telephone,
+            'address': self.address,
+            'post_count': len(self.posts),
+            'rentals_count': len(self.car_rented),
+            'comments_count': len(self.comments),
+            'opinions_count': len(self.opinions)
+        }
+        return json_user
+
     @staticmethod
     def from_json(json_data):
         """Create User object from json data.
