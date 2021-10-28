@@ -1,4 +1,4 @@
-from flask import jsonify, request, g
+from flask import jsonify, request
 from ..models import User
 from . import api
 from app.api.errors import conflict, bad_request, unauthorized
@@ -46,6 +46,33 @@ def login():
 
 @api.route('/auth/about_me/', methods=['GET'])
 @token_required
-def get_current_user(user_id):
+def get_current_user(user_id: int):
     user = User.query.get_or_404(user_id, description=f'User with id {user_id} not found')
     return jsonify({'success': True, 'data': user.to_json_user_data()})
+
+
+@api.route('/auth/user/', methods=['PATCH'])
+@token_required
+@validate_json_content_type
+def update_password_and_email(user_id: int):
+    args = request.get_json()
+    user = User.query.get_or_404(user_id, description=f'User with id {user_id} not found')
+    if 'password' not in args:
+        return bad_request(message='No password')
+    if 'new_password' not in args and 'new_email' not in args:
+        return bad_request(message='No new data')
+    if not user.verify_password(args['password']):
+        return unauthorized(message='Invalid password')
+    else:
+        if 'new_password' in args:
+            user.password = args['new_password']
+        if 'new_email' in args:
+            query = User.query.filter_by(email=args['new_email']).first()
+            if query:
+                return conflict(message=f'Email {args["new_email"]} already exists')
+            else:
+                user.email = args['new_email']
+
+    db.session.commit()
+
+    return jsonify({'success': True})
