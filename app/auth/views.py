@@ -41,10 +41,13 @@ def show_user():
     form_mail = EditMailForm()
     if form_mail.submit_new_mail.data and form_mail.validate_on_submit():
         if current_user.verify_password(form_mail.password.data):
-            current_user.email = form_mail.new_email.data
-            db.session.add(current_user._get_current_object())
-            db.session.commit()
-            flash('Changes saved.')
+            if User.query.filter_by(email=form_mail.new_email.data.lower()).first() is None:
+                current_user.email = form_mail.new_email.data
+                db.session.add(current_user._get_current_object())
+                db.session.commit()
+                flash('Changes saved.')
+            else:
+                flash('Email already exists.')
         else:
             flash('Wrong password')
         return redirect(url_for('.show_user'))
