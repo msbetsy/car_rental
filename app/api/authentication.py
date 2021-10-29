@@ -76,3 +76,29 @@ def update_password_and_email(user_id: int):
     db.session.commit()
 
     return jsonify({'success': True})
+
+
+@api.route('/auth/user/', methods=["PUT"])
+@token_required
+@validate_json_content_type
+def update_user(user_id: int):
+    args = request.get_json()
+    user = User.query.get_or_404(user_id, description=f'User with id {user_id} not found')
+
+    if 'email' in args:
+        if User.query.filter(User.email == args['email']).first():
+            return conflict(message=f'User with email {args["email"]} already exists')
+        if 'password' not in args:
+            return bad_request(message="No password, can't update email")
+        else:
+            if not user.verify_password(args['password']):
+                return unauthorized(message='Invalid credentials, wrong password')
+
+    if 'new_password' in args:
+        if not user.verify_password(args['password']):
+            return unauthorized(message='Invalid credentials, wrong password')
+
+    User.update_from_json(user_id, args)
+    db.session.commit()
+
+    return jsonify({'success': True, 'data': user.to_json_user_data()})
