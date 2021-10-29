@@ -6,7 +6,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.orm import relationship
 from sqlalchemy import Column, ForeignKey
 import jwt
-from email_validator import validate_email
+from email_validator import validate_email, EmailNotValidError
 from app.exceptions import ValidationError
 from . import db, login_manager
 
@@ -237,6 +237,7 @@ class User(UserMixin, db.Model):
         json_user = {
             'name': self.name,
             'surname': self.surname,
+            'email': self.email,
             'telephone': self.telephone,
             'address': self.address,
             'post_count': len(self.posts),
@@ -271,11 +272,58 @@ class User(UserMixin, db.Model):
         check_if_null(email, "email")
         if len(email) > 80:
             raise ValidationError('Maximum number of characters is 80.', 'email')
-        if not validate_email(email):
+        try:
+            validate_email(email)
+        except EmailNotValidError:
             raise ValidationError("Email is incorrect.", "email")
         check_if_null(telephone, "telephone")
         return User(name=name, surname=surname, password_hash=generate_password_hash(password), email=email,
                     telephone=telephone, address=address)
+
+    @staticmethod
+    def update_from_json(user_id, json_data):
+        """Create User object from json data.
+
+        :param user_id: User id.
+        :tyoe user_id: int
+        :param json_data: Data in json.
+        :type json_data: dict
+        :raises ValidationError: wrong attribute
+        """
+        user = User.query.get_or_404(user_id)
+        name = json_data.get('name', user.name)
+        surname = json_data.get('surname', user.surname)
+        email = json_data.get('email', user.email)
+        telephone = json_data.get('telephone', user.telephone)
+
+        if 'new_password' in json_data:
+            password = json_data.get('new_password')
+            check_if_null(password, "password")
+            password_hash = generate_password_hash(password)
+        else:
+            password_hash = user.password_hash
+
+        if 'address' in json_data:
+            address = json_data.get('address', user.address)
+            check_if_null(address, "address")
+
+        if len(email) > 80:
+            raise ValidationError('Maximum number of characters is 80.', 'email')
+        try:
+            validate_email(email)
+        except EmailNotValidError:
+            raise ValidationError("Email is incorrect.", "email")
+        check_if_null(name, "name")
+        check_if_null(surname, "surname")
+        check_if_null(email, "email")
+        check_if_null(telephone, "telephone")
+
+        user.name = name
+        user.surname = surname
+        user.password_hash = password_hash
+        user.email = email
+        user.telephone = telephone
+        user.address = address
 
     def generate_jwt_token(self):
         """Generates jwt token.
