@@ -32,6 +32,12 @@ def conflict(message):
     return response
 
 
+def unsupported_media_type(message):
+    response = jsonify({'error': 'unsupported media type', 'message': message, 'success': False})
+    response.status_code = 415
+    return response
+
+
 @api.errorhandler(ValidationError)
 def validation_error(e):
     """Method used for validation new data."""

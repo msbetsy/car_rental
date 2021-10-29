@@ -1,9 +1,8 @@
 """This module stores decorators for api."""
 from functools import wraps
 from flask import request, current_app
-from werkzeug.exceptions import UnsupportedMediaType
 import jwt
-from app.api.errors import unauthorized, bad_request
+from app.api.errors import unauthorized, bad_request, unsupported_media_type
 
 
 def validate_json_content_type(func):
@@ -13,7 +12,7 @@ def validate_json_content_type(func):
     def wrapper(*args, **kwargs):
         data = request.get_json()
         if data is None:
-            raise UnsupportedMediaType('Content type must be: application/json')
+            return unsupported_media_type(message='Content type must be: application/json')
         return func(*args, **kwargs)
 
     return wrapper
