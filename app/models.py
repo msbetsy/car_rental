@@ -285,7 +285,7 @@ class User(UserMixin, db.Model):
         """Create User object from json data.
 
         :param user_id: User id.
-        :tyoe user_id: int
+        :type user_id: int
         :param json_data: Data in json.
         :type json_data: dict
         :raises ValidationError: wrong attribute
@@ -306,6 +306,8 @@ class User(UserMixin, db.Model):
         if 'address' in json_data:
             address = json_data.get('address', user.address)
             check_if_null(address, "address")
+        else:
+            address = user.address
 
         if len(email) > 80:
             raise ValidationError('Maximum number of characters is 80.', 'email')
