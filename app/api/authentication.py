@@ -1,8 +1,8 @@
 from flask import jsonify, request
-from ..models import User
+from ..models import User, Permission, Role
 from . import api
-from app.api.errors import conflict, bad_request, unauthorized
-from app.api.decorators import validate_json_content_type, token_required
+from app.api.errors import conflict, bad_request, unauthorized, forbidden
+from app.api.decorators import validate_json_content_type, token_required, permission_required
 from .. import db
 
 
@@ -86,7 +86,7 @@ def update_user(user_id: int):
     user = User.query.get_or_404(user_id, description=f'User with id {user_id} not found')
 
     if 'email' in args:
-        if User.query.filter(User.email == args['email']).first():
+        if User.query.filter(User.email == args['email']).first() is not None:
             return conflict(message=f'User with email {args["email"]} already exists')
         if 'password' not in args:
             return bad_request(message="No password, can't update email")
@@ -102,3 +102,36 @@ def update_user(user_id: int):
     db.session.commit()
 
     return jsonify({'success': True, 'data': user.to_json_user_data()})
+
+
+@api.route('/auth/admin/', methods=["PUT"])
+@token_required
+@permission_required(Permission.ADMIN)
+@validate_json_content_type
+def update_user_by_admin(user_id: int):
+    logged_user = User.query.get_or_404(user_id, description=f'User with id {user_id} not found')
+    args = request.get_json()
+    if 'user_to_edit_id' not in args:
+        return bad_request(message='No user_to_edit_id')
+    else:
+        user_to_edit_id = args['user_to_edit_id']
+        user = User.query.get_or_404(user_to_edit_id, description=f'User with id {user_to_edit_id} not found')
+        if 'new_password' in args:
+            pass
+        if 'password' in args:
+            pass
+        if 'email' in args:
+            if User.query.filter(User.email == args['email']).first() is not None:
+                return conflict(message=f'User with email {args["email"]} already exists')
+
+        if 'role_id' in args:
+            if args['role_id'] in (1, 2, 3):
+                user.role_id = args['role_id']
+            else:
+                return bad_request(message="Wrong role_id")
+
+        User.update_from_json(user_to_edit_id, args)
+        db.session.commit()
+        role = Role.query.get(user.role_id).name
+
+    return jsonify({'success': True, 'data': user.to_json_user_data(), 'role': role})
