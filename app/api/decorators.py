@@ -1,6 +1,6 @@
 """This module stores decorators for api."""
 from functools import wraps
-from flask import request, current_app, g, session
+from flask import request, current_app
 import jwt
 from app.api.errors import unauthorized, bad_request, unsupported_media_type, forbidden
 from ..models import User

@@ -1,7 +1,8 @@
+"""This module stores methods for authentication while using api."""
 from flask import jsonify, request
 from ..models import User, Permission, Role
 from . import api
-from app.api.errors import conflict, bad_request, unauthorized, forbidden
+from app.api.errors import conflict, bad_request, unauthorized
 from app.api.decorators import validate_json_content_type, token_required, permission_required
 from .. import db
 
