@@ -1,8 +1,9 @@
 """This module stores decorators for api."""
 from functools import wraps
-from flask import request, current_app
+from flask import request, current_app, g, session
 import jwt
-from app.api.errors import unauthorized, bad_request, unsupported_media_type
+from app.api.errors import unauthorized, bad_request, unsupported_media_type, forbidden
+from ..models import User
 
 
 def validate_json_content_type(func):
@@ -45,3 +46,23 @@ def token_required(func):
             return func(payload['user_id'], *args, **kwargs)
 
     return wrapper
+
+
+def permission_required(permission):
+    """Check permissions"""
+
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            user_id = None
+            auth = request.headers.get('Authorization')
+            if 'Bearer ' in auth:
+                token = auth.split(' ')[1]
+            user_id = jwt.decode(token, current_app.config.get('SECRET_KEY'), algorithms='HS256')['user_id']
+            if not User.query.get(user_id).can(permission):
+                return forbidden('Insufficient permissions')
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
