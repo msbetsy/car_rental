@@ -1,10 +1,13 @@
 """This module stores models used in application."""
 from datetime import datetime, timedelta
+import os
+import shutil
 from flask_login import UserMixin, AnonymousUserMixin
 from flask import current_app, url_for
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.orm import relationship
 from sqlalchemy import Column, ForeignKey
+from werkzeug.utils import secure_filename
 import jwt
 from email_validator import validate_email, EmailNotValidError
 from app.exceptions import ValidationError
@@ -183,8 +186,6 @@ class User(UserMixin, db.Model):
 
         :param password: User's password.
         :type password: str
-        :return: Hashed and salted password.
-        :rtype: str
         """
         hash_and_salted_password = generate_password_hash(
             password,
@@ -192,7 +193,6 @@ class User(UserMixin, db.Model):
             salt_length=8
         )
         self.password_hash = hash_and_salted_password
-        return hash_and_salted_password
 
     def verify_password(self, password):
         """Check if password is correct.
@@ -344,7 +344,7 @@ def check_if_null(variable, variable_name):
     """Check if value in json dict is null or None.
 
     :param variable: Data from json.
-    :type variable: str
+    :type variable: any
     :param variable_name: Name of variable.
     :type variable_name: str
     :raises ValidationError: variable can't be null.
@@ -388,6 +388,82 @@ class Car(db.Model):
     model = db.Column(db.String(250), unique=False, nullable=False)
     image = db.Column(db.Text, nullable=True)
     car_rental = relationship("Rental", back_populates="car_rent")
+
+    def to_json(self):
+        """Convert car object to json.
+
+        :return json_car: car data in dict.
+        :rtype: dict
+        """
+        img = url_for('static', filename='img/' + self.image)
+        json_car = {
+            'url': url_for('api.get_car', car_id=self.id),
+            'name': self.name,
+            'price': self.price,
+            'year': self.year,
+            'model': self.model,
+            'image': img
+        }
+        return json_car
+
+    @staticmethod
+    def from_json(json_data):
+        """Create Car object from json data.
+
+        :param json_data: Data in json.
+        :type json_data: dict
+        :raises ValidationError: wrong attribute
+        :return: Car object.
+        :rtype: object
+        """
+        basedir = os.path.abspath(os.path.dirname(__file__))
+
+        name = json_data.get('name')
+        check_if_null(name, "name")
+
+        price = json_data.get('price')
+        check_if_null(price, "price")
+
+        year = json_data.get('year')
+        check_if_null(year, "year")
+
+        model = json_data.get('model')
+        check_if_null(model, "model")
+
+        if 'image' in json_data:
+            image = json_data.get('image')
+            is_file = os.path.isfile(os.path.join(basedir, 'static\img\\', os.path.basename(image)))
+            filename = secure_filename(os.path.basename(image))
+            if is_file:
+                image = filename
+            else:
+                if filename.endswith(("png", "jpg", "jpeg", "gif")):
+                    source = os.path.join(os.path.dirname(image), filename)
+                    target = os.path.join(basedir, 'static\img\\', filename)
+
+                    try:
+                        shutil.copyfile(source, target)
+                        image = filename
+                    except IOError as e:
+                        raise ValidationError("Unable to copy file. %s" % e, 'image')
+                else:
+                    raise ValidationError('Wrong value, must be whole path , wrong format of file.', 'image')
+        else:
+            image = "403.jpg"
+
+        if not isinstance(year, int) or year > datetime.today().year:
+            raise ValidationError('Wrong value.', 'year')
+
+        if not isinstance(price, (int, float)):
+            raise ValidationError('Wrong value, must be numeric.', 'price')
+
+        if not isinstance(name, str):
+            raise ValidationError('Wrong value, must be string.', 'name')
+
+        if not isinstance(model, str):
+            raise ValidationError('Wrong value, must be string.', 'model')
+
+        return Car(name=name, price=price, year=year, model=model, image=image)
 
 
 class Rental(db.Model):
