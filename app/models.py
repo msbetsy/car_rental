@@ -13,6 +13,8 @@ from email_validator import validate_email, EmailNotValidError
 from app.exceptions import ValidationError
 from . import db, login_manager
 
+BASEDIR = os.path.abspath(os.path.dirname(__file__))
+
 
 class Permission:
     """Class contains the permission model --> each permission has different value.
@@ -282,7 +284,7 @@ class User(UserMixin, db.Model):
 
     @staticmethod
     def update_from_json(user_id, json_data):
-        """Create User object from json data.
+        """Update User object from json data.
 
         :param user_id: User id.
         :type user_id: int
@@ -416,8 +418,6 @@ class Car(db.Model):
         :return: Car object.
         :rtype: object
         """
-        basedir = os.path.abspath(os.path.dirname(__file__))
-
         name = json_data.get('name')
         check_if_null(name, "name")
 
@@ -432,14 +432,14 @@ class Car(db.Model):
 
         if 'image' in json_data:
             image = json_data.get('image')
-            is_file = os.path.isfile(os.path.join(basedir, 'static\img\\', os.path.basename(image)))
+            is_file = os.path.isfile(os.path.join(BASEDIR, 'static\img\\', os.path.basename(image)))
             filename = secure_filename(os.path.basename(image))
             if is_file:
                 image = filename
             else:
                 if filename.endswith(("png", "jpg", "jpeg", "gif")):
                     source = os.path.join(os.path.dirname(image), filename)
-                    target = os.path.join(basedir, 'static\img\\', filename)
+                    target = os.path.join(BASEDIR, 'static\img\\', filename)
 
                     try:
                         shutil.copyfile(source, target)
@@ -464,6 +464,66 @@ class Car(db.Model):
             raise ValidationError('Wrong value, must be string.', 'model')
 
         return Car(name=name, price=price, year=year, model=model, image=image)
+
+    @staticmethod
+    def update_from_json(car_id, json_data):
+        """Update Car object from json data.
+
+        :param car_id: Car id.
+        :type car_id: int
+        :param json_data: Data in json.
+        :type json_data: dict
+        :raises ValidationError: wrong attribute
+        """
+        car = Car.query.get_or_404(car_id)
+        name = json_data.get('name', car.name)
+        check_if_null(name, "name")
+        price = json_data.get('price', car.price)
+        check_if_null(price, "price")
+        year = json_data.get('year', car.year)
+        check_if_null(year, "year")
+        model = json_data.get('model', car.model)
+        check_if_null(model, "model")
+
+        if 'image' in json_data:
+            image = json_data.get('image')
+            is_file = os.path.isfile(os.path.join(BASEDIR, 'static\img\\', os.path.basename(image)))
+            filename = secure_filename(os.path.basename(image))
+            if car.image != filename:
+                if is_file:
+                    image = filename
+                else:
+                    if filename.endswith(("png", "jpg", "jpeg", "gif")):
+                        source = os.path.join(os.path.dirname(image), filename)
+                        target = os.path.join(BASEDIR, 'static\img\\', filename)
+
+                        try:
+                            shutil.copyfile(source, target)
+                            image = filename
+                        except IOError as e:
+                            raise ValidationError("Unable to copy file. %s" % e, 'image')
+                    else:
+                        raise ValidationError('Wrong value, must be whole path , wrong format of file.', 'image')
+        else:
+            image = car.image
+
+        if not isinstance(year, int) or year > datetime.today().year:
+            raise ValidationError('Wrong value.', 'year')
+
+        if not isinstance(price, (int, float)):
+            raise ValidationError('Wrong value, must be numeric.', 'price')
+
+        if not isinstance(name, str):
+            raise ValidationError('Wrong value, must be string.', 'name')
+
+        if not isinstance(model, str):
+            raise ValidationError('Wrong value, must be string.', 'model')
+
+        car.name = name
+        car.year = year
+        car.price = price
+        car.model = model
+        car.image = image
 
 
 class Rental(db.Model):
