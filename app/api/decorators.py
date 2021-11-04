@@ -11,7 +11,10 @@ def validate_json_content_type(func):
 
     @wraps(func)
     def wrapper(*args, **kwargs):
-        data = request.get_json()
+        try:
+            data = request.get_json()
+        except BaseException:
+            return bad_request(message='No json content.')
         if data is None:
             return unsupported_media_type(message='Content type must be: application/json')
         return func(*args, **kwargs)
