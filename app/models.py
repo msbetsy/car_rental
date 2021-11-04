@@ -565,3 +565,24 @@ class Comment(db.Model):
     text = db.Column(db.Text, nullable=False)
     date = db.Column(db.DateTime, nullable=False)
     parent_comment = db.Column(db.Integer, nullable=True)
+
+    def to_json(self):
+        """Convert comment object to json.
+
+        :return json_comment: car data in dict.
+        :rtype: dict
+        """
+        if self.parent_comment == 0:
+            upper_comment = None
+        else:
+            upper_comment = url_for('api.show_comment', comment_id=self.parent_comment)
+
+        json_comment = {
+            'text': self.text,
+            'post_url': url_for('api.show_post', post_id=self.post_id),
+            'author_url': url_for('api.get_user', user_to_show_id=self.author_id),
+            'date': self.date.strftime("%m/%d/%Y, %H:%M:%S"),
+            'upper_comment_url': upper_comment
+        }
+
+        return json_comment
