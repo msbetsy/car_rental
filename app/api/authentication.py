@@ -118,9 +118,9 @@ def update_user_by_admin(user_id: int):
         user_to_edit_id = args['user_to_edit_id']
         user = User.query.get_or_404(user_to_edit_id, description=f'User with id {user_to_edit_id} not found')
         if 'new_password' in args:
-            pass
+            del args['new_password']
         if 'password' in args:
-            pass
+            del args['password']
         if 'email' in args:
             if User.query.filter(User.email == args['email']).first() is not None:
                 return conflict(message=f'User with email {args["email"]} already exists')
