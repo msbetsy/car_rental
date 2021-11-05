@@ -224,13 +224,16 @@ class User(UserMixin, db.Model):
         """
         opinions = [url_for('api.show_opinion', opinion_id=opinion.id) for opinion in
                     Opinion.query.filter_by(author_id=self.id).all()]
+        comments = [url_for('api.show_comment', comment_id=comment.id) for comment in
+                    Comment.query.filter_by(author_id=self.id).all()]
         json_user = {
             'name': self.name,
             'surname': self.surname,
-            'post_count': len(self.posts),
-            'rentals_count': len(self.car_rented),
-            'comments_count': len(self.comments),
-            'opinions_count': len(self.opinions),
+            'post_number': len(self.posts),
+            'rentals_number': len(self.car_rented),
+            'comments_number': len(self.comments),
+            'comments': comments,
+            'opinions_number': len(self.opinions),
             'opinions': opinions
         }
         return json_user
@@ -622,3 +625,36 @@ class Comment(db.Model):
         }
 
         return json_comment
+
+    @staticmethod
+    def from_json(json_data):
+        """Create Comment object from json data.
+
+        :param json_data: Data in json.
+        :type json_data: dict
+        :raises ValidationError: wrong attribute
+        :return: Comment object.
+        :rtype: object
+        """
+        text = json_data.get('text')
+        check_if_null(text, "text")
+
+        date = datetime.today()
+        author = json_data.get('author')
+
+        post = json_data.get('post_id')
+        check_if_null(post, 'post_id')
+        posts_number = len(NewsPost.query.all())
+
+        upper_comment = json_data.get('upper_comment')
+        check_if_null(upper_comment, "upper_comment")
+        possible_upper_comments = [comment_id.id for comment_id in Comment.query.filter_by(post_id=post)]
+
+        if not isinstance(text, str):
+            raise ValidationError('Wrong value.', 'text')
+        if not isinstance(post, int) or 0 > post or post > posts_number:
+            raise ValidationError('Wrong value.', 'post')
+        if not isinstance(upper_comment, int) or upper_comment < 1 or upper_comment not in possible_upper_comments:
+            raise ValidationError('Wrong value.', 'upper_comment')
+
+        return Comment(post_id=post, author_id=author, text=text, date=date, parent_comment=upper_comment)
