@@ -2,6 +2,7 @@
 from datetime import datetime, timedelta
 import os
 import shutil
+import random
 from flask_login import UserMixin, AnonymousUserMixin
 from flask import current_app, url_for
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -221,17 +222,21 @@ class User(UserMixin, db.Model):
         :return json_user: user's data in dict.
         :rtype: dict
         """
+        opinions = [url_for('api.show_opinion', opinion_id=opinion.id) for opinion in
+                    Opinion.query.filter_by(author_id=self.id).all()]
         json_user = {
             'name': self.name,
+            'surname': self.surname,
             'post_count': len(self.posts),
             'rentals_count': len(self.car_rented),
             'comments_count': len(self.comments),
-            'opinions_count': len(self.opinions)
+            'opinions_count': len(self.opinions),
+            'opinions': opinions
         }
         return json_user
 
     def to_json_user_data(self):
-        """Convert user object to json.
+        """Convert user object to json, used for user not admin.
 
         :return json_user: user's data in dict.
         :rtype: dict
@@ -241,11 +246,7 @@ class User(UserMixin, db.Model):
             'surname': self.surname,
             'email': self.email,
             'telephone': self.telephone,
-            'address': self.address,
-            'post_count': len(self.posts),
-            'rentals_count': len(self.car_rented),
-            'comments_count': len(self.comments),
-            'opinions_count': len(self.opinions)
+            'address': self.address
         }
         return json_user
 
@@ -378,6 +379,41 @@ class Opinion(db.Model):
     image = db.Column(db.Text, nullable=False)
     date = db.Column(db.DateTime, nullable=False)
 
+    def to_json(self):
+        """Convert opinion object to json.
+
+        :return json_opinion: data in dict.
+        :rtype: dict
+        """
+        json_opinion = {
+            "author_url": url_for('api.get_user', user_to_show_id=self.author_id),
+            "name": User.query.get(self.author_id).name,
+            "text": self.text,
+            "image_url": url_for('static', filename='img/' + self.image),
+            "date": self.date.strftime("%m/%d/%Y, %H:%M:%S")
+        }
+        return json_opinion
+
+    @staticmethod
+    def from_json(json_data):
+        """Create Opinion object from json data.
+
+        :param json_data: Data in json.
+        :type json_data: dict
+        :raises ValidationError: wrong attribute
+        :return: Opinion object.
+        :rtype: object
+        """
+        text = json_data.get('text')
+        check_if_null(text, "text")
+        date = datetime.today()
+        pictures = ["opinion1.jpg", "opinion2.jpg", "opinion3.jpg"]
+        image = random.choice(pictures)
+        author = json_data.get('author')
+        if not isinstance(text, str):
+            raise ValidationError('Wrong value.', 'text')
+        return Opinion(author_id=author, text=text, image=image, date=date)
+
 
 class Car(db.Model):
     """Class contains information about the car model.
@@ -394,7 +430,7 @@ class Car(db.Model):
     def to_json(self):
         """Convert car object to json.
 
-        :return json_car: car data in dict.
+        :return json_car: data in dict.
         :rtype: dict
         """
         img = url_for('static', filename='img/' + self.image)
@@ -569,7 +605,7 @@ class Comment(db.Model):
     def to_json(self):
         """Convert comment object to json.
 
-        :return json_comment: car data in dict.
+        :return json_comment: data in dict.
         :rtype: dict
         """
         if self.parent_comment == 0:
