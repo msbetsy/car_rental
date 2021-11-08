@@ -577,6 +577,95 @@ class Rental(db.Model):
     users_rent = relationship('User', back_populates="car_rented")
     car_rent = relationship("Car", back_populates="car_rental")
 
+    def to_json(self):
+        """Convert rental object to json.
+
+        :return json_rental: data in dict.
+        :rtype: dict
+        """
+        json_rental = {
+            'user_url': url_for('api.get_user', user_to_show_id=self.users_id),
+            'car_url': url_for('api.get_car', car_id=self.cars_id),
+            'from_date': self.from_date.strftime("%m/%d/%Y, %H:%M"),
+            'to_date': self.to_date.strftime("%m/%d/%Y, %H:%M"),
+            'available_from': self.available_from.strftime("%m/%d/%Y, %H:%M")
+        }
+        return json_rental
+
+    @staticmethod
+    def from_json(json_data):
+        """Create Rental object from json data.
+
+        :param json_data: Data in json.
+        :type json_data: dict
+        :raises ValidationError: wrong attribute
+        :return: Rental object.
+        :rtype: object
+        """
+        user_id = json_data.get('user_id')
+
+        car = json_data.get('car_id')
+        check_if_null(car, 'car_id')
+        possible_car_id = [car.id for car in Car.query.all()]
+        if car not in possible_car_id:
+            raise ValidationError('Wrong value.', 'car_id')
+
+        from_date = json_data.get('from_date')
+        check_if_null(from_date, "from_date")
+        from_date = check_date(from_date, "from_date")
+
+        to_date = json_data.get('to_date')
+        check_if_null(to_date, "to_date")
+        to_date = check_date(to_date, "to_date")
+
+        if to_date <= from_date:
+            raise ValidationError(f"Wrong value, date can't be before {from_date.strftime('%Y-%m-%d %H:%M')}.",
+                                  'from_date')
+        all_car_rentals = [rental for rental in Rental.query.filter_by(cars_id=car).all()]
+        for rental in all_car_rentals:
+            if rental.from_date <= from_date <= rental.available_from or rental.from_date <= to_date + timedelta(
+                    hours=1) <= rental.available_from:
+                raise ValidationError(
+                    f"Wrong dates, available before: "
+                    f"{(rental.from_date + timedelta(minutes=-61)).strftime('%Y-%m-%d %H:%M')},"
+                    f"available after:"
+                    f"{(rental.available_from + timedelta(minutes=1)).strftime('%Y-%m-%d %H:%M')}", "dates")
+            if from_date < rental.from_date < rental.available_from and \
+                    rental.from_date < rental.available_from < to_date + timedelta(hours=1):
+                raise ValidationError(
+                    f"Wrong dates, available before: "
+                    f"{(rental.from_date + timedelta(minutes=-61)).strftime('%Y-%m-%d %H:%M')},"
+                    f"available after:"
+                    f"{(rental.available_from + timedelta(minutes=1)).strftime('%Y-%m-%d %H:%M')}", "dates")
+        available_from = to_date + timedelta(hours=1)
+
+        return Rental(cars_id=car, users_id=user_id, from_date=from_date, to_date=to_date,
+                      available_from=available_from)
+
+
+def check_date(date, name_date: str):
+    """Check if check_date in json dict is correct.
+
+    :param date: Date from json.
+    :type date: int
+    :param name_date: Name of date.
+    :type name_date: str
+    :raises ValidationError: variable is wrong.
+    """
+    if not isinstance(date, int):
+        raise ValidationError('Wrong value, not int.', name_date)
+    if len(str(date)) != 12:
+        raise ValidationError('Wrong value, not 12 chars.', name_date)
+    date_time_f = "".join((str(date), '00.000000'))
+    try:
+        date = datetime.strptime(date_time_f, '%Y%m%d%H%M%S.%f')
+    except ValueError:
+        raise ValidationError('Wrong value, not YmdHM format.', name_date)
+    if date < datetime.now():
+        raise ValidationError(f"Wrong value, date can't be before {datetime.now().strftime('%Y-%m-%d %H:%M')}.",
+                              name_date)
+    return date
+
 
 class NewsPost(db.Model):
     """Class contains NewsPosts.
