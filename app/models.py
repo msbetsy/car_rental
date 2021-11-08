@@ -226,11 +226,18 @@ class User(UserMixin, db.Model):
                     Opinion.query.filter_by(author_id=self.id).all()]
         comments = [url_for('api.show_comment', comment_id=comment.id) for comment in
                     Comment.query.filter_by(author_id=self.id).all()]
+        user_rentals = [rental for rental in Rental.query.filter_by(users_id=self.id).all()]
+        rentals = [
+            url_for('api.show_rental', car_id=rental.cars_id, user_id=rental.users_id,
+                    date_time=int(rental.from_date.strftime('%Y%m%d%H%M'))) for
+            rental in user_rentals]
+
         json_user = {
             'name': self.name,
             'surname': self.surname,
             'post_number': len(self.posts),
             'rentals_number': len(self.car_rented),
+            'rentals': rentals,
             'comments_number': len(self.comments),
             'comments': comments,
             'opinions_number': len(self.opinions),
