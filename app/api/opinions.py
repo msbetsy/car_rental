@@ -13,7 +13,7 @@ def show_opinions():
     return jsonify({'success': True, 'data': opinions})
 
 
-@api.route('/opinions/<int:opinion_id>', methods=['GET'])
+@api.route('/opinions/<int:opinion_id>/', methods=['GET'])
 def show_opinion(opinion_id: int):
     query = Opinion.query.get_or_404(opinion_id, description=f'Opinion with id {opinion_id} not found')
     return jsonify({'success': True, 'data': query.to_json()})

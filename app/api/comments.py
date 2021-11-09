@@ -13,7 +13,7 @@ def show_comments():
     return jsonify({'success': True, 'data': comments})
 
 
-@api.route('/comments/<int:comment_id>', methods=['GET'])
+@api.route('/comments/<int:comment_id>/', methods=['GET'])
 def show_comment(comment_id: int):
     query = Comment.query.get_or_404(comment_id)
     return jsonify({'success': True, 'data': query.to_json()})

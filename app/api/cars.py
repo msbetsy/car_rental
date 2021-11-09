@@ -14,7 +14,7 @@ def get_all_cars():
     return jsonify({'data': cars, 'number_of_records': len(query), 'success': True})
 
 
-@api.route('/cars/<int:car_id>', methods=['GET'])
+@api.route('/cars/<int:car_id>/', methods=['GET'])
 def get_car(car_id: int):
     query = Car.query.get_or_404(car_id, description=f'Car with id {car_id} not found')
     return jsonify({'data': query.to_json(), 'success': True})
