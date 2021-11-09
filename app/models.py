@@ -231,11 +231,14 @@ class User(UserMixin, db.Model):
             url_for('api.show_rental', car_id=rental.cars_id, user_id=rental.users_id,
                     date_time=int(rental.from_date.strftime('%Y%m%d%H%M'))) for
             rental in user_rentals]
+        posts = [url_for('api.show_post', post_id=post.id) for post in
+                 NewsPost.query.filter_by(author_id=self.id).all()]
 
         json_user = {
             'name': self.name,
             'surname': self.surname,
             'post_number': len(self.posts),
+            'posts': posts,
             'rentals_number': len(self.car_rented),
             'rentals': rentals,
             'comments_number': len(self.comments),
@@ -686,6 +689,54 @@ class NewsPost(db.Model):
     body = db.Column(db.Text, nullable=False)
     img_url = db.Column(db.String(250), nullable=False)
     comments = relationship("Comment", back_populates="parent_post")
+
+    def to_json(self):
+        """Convert NewsPost object to json.
+
+        :return json_news_post: data in dict.
+        :rtype: dict
+        """
+        comments_list = [comment for comment in Comment.query.filter_by(post_id=self.id).all()]
+        comment_parents = list(
+            set(([comment.parent_comment for comment in Comment.query.filter_by(post_id=self.id).all()])))
+        comments = get_all_comments_for_post(parent_comment=0, list_of_comments=comments_list,
+                                             list_of_parents_comments=comment_parents)
+        json_news_post = {
+            'user_url': url_for('api.get_user', user_to_show_id=self.author_id),
+            'title': self.title,
+            'text': self.body,
+            'date': self.date,
+            'img_url': url_for('static', filename='img/' + self.img_url),
+            'comments_urls': comments
+        }
+        return json_news_post
+
+
+def get_all_comments_for_post(parent_comment, list_of_comments, list_of_parents_comments):
+    """Create a list of comments including hierarchy of child comments.
+
+    :param parent_comment: Value of parent comment (ID).
+    :type parent_comment: int
+    :param list_of_comments: List of comments.
+    :type list_of_comments: list
+    :param list_of_parents_comments: List of parent comments (IDs).
+    :type list_of_parents_comments: list
+    :return all_comments: All comments with child comments.
+    :rtype: list
+    """
+    all_comments = []
+    for item in list_of_comments:
+        if item.parent_comment == parent_comment:
+            if item.id not in list_of_parents_comments:
+                comment_url = url_for('api.show_comment', comment_id=item.id)
+            else:
+                comment_url = {
+                    url_for('api.show_comment', comment_id=item.id): get_all_comments_for_post(item.id,
+                                                                                               list_of_comments,
+                                                                                               list_of_parents_comments)
+                }
+            all_comments.append(comment_url)
+    return all_comments
 
 
 class Comment(db.Model):
