@@ -480,25 +480,12 @@ class Car(db.Model):
         check_if_null(model, "model")
 
         if 'image' in json_data:
-            image = json_data.get('image')
-            is_file = os.path.isfile(os.path.join(BASEDIR, 'static\img\\', os.path.basename(image)))
-            filename = secure_filename(os.path.basename(image))
-            if is_file:
-                image = filename
-            else:
-                if filename.endswith(("png", "jpg", "jpeg", "gif")):
-                    source = os.path.join(os.path.dirname(image), filename)
-                    target = os.path.join(BASEDIR, 'static\img\\', filename)
-
-                    try:
-                        shutil.copyfile(source, target)
-                        image = filename
-                    except IOError as e:
-                        raise ValidationError("Unable to copy file. %s" % e, 'image')
-                else:
-                    raise ValidationError('Wrong value, must be whole path , wrong format of file.', 'image')
+            img = json_data.get('image')
+            if not isinstance(img, str):
+                raise ValidationError('Wrong value.', 'image')
+            image = check_img_name(img)
         else:
-            image = "403.jpg"
+            image = "no_img.jpg"
 
         if not isinstance(year, int) or year > datetime.today().year:
             raise ValidationError('Wrong value.', 'year')
@@ -535,24 +522,10 @@ class Car(db.Model):
         check_if_null(model, "model")
 
         if 'image' in json_data:
-            image = json_data.get('image')
-            is_file = os.path.isfile(os.path.join(BASEDIR, 'static\img\\', os.path.basename(image)))
-            filename = secure_filename(os.path.basename(image))
-            if car.image != filename:
-                if is_file:
-                    image = filename
-                else:
-                    if filename.endswith(("png", "jpg", "jpeg", "gif")):
-                        source = os.path.join(os.path.dirname(image), filename)
-                        target = os.path.join(BASEDIR, 'static\img\\', filename)
-
-                        try:
-                            shutil.copyfile(source, target)
-                            image = filename
-                        except IOError as e:
-                            raise ValidationError("Unable to copy file. %s" % e, 'image')
-                    else:
-                        raise ValidationError('Wrong value, must be whole path , wrong format of file.', 'image')
+            img = json_data.get('image')
+            if not isinstance(img, str):
+                raise ValidationError('Wrong value.', 'image')
+            image = check_img_name(img, car.image)
         else:
             image = car.image
 
@@ -711,6 +684,39 @@ class NewsPost(db.Model):
         }
         return json_news_post
 
+    @staticmethod
+    def from_json(json_data):
+        """Create NewsPost object from json data.
+
+        :param json_data: Data in json.
+        :type json_data: dict
+        :raises ValidationError: wrong attribute
+        :return: NewsPost object.
+        :rtype: object
+        """
+        date = datetime.today().strftime("%Y-%m-%d")
+        author = json_data.get('author')
+
+        title = json_data.get('title')
+        check_if_null(title, 'title')
+        if not isinstance(title, str):
+            raise ValidationError('Wrong value.', 'title')
+
+        body = json_data.get('text')
+        check_if_null(body, 'text')
+        if not isinstance(body, str):
+            raise ValidationError('Wrong value.', 'body')
+
+        if 'image' in json_data:
+            img = json_data.get('image')
+            if not isinstance(img, str):
+                raise ValidationError('Wrong value.', 'image')
+            image = check_img_name(img)
+        else:
+            image = "no_img.jpg"
+
+        return NewsPost(author_id=author, title=title, date=date, body=body, img_url=image)
+
 
 def get_all_comments_for_post(parent_comment, list_of_comments, list_of_parents_comments):
     """Create a list of comments including hierarchy of child comments.
@@ -737,6 +743,36 @@ def get_all_comments_for_post(parent_comment, list_of_comments, list_of_parents_
                 }
             all_comments.append(comment_url)
     return all_comments
+
+
+def check_img_name(image, old_image=None):
+    """Check if name of image is secure, if so copy it to img folder.
+
+    :param image: Path to the image.
+    :type image: string
+    :param old_image: Name of old image in db.
+    :type old_image: string
+    :return image: Safe filename.
+    :rtype: string
+    """
+    is_file = os.path.isfile(os.path.join(BASEDIR, 'static\img\\', os.path.basename(image)))
+    filename = secure_filename(os.path.basename(image))
+    if old_image != filename:
+        if is_file:
+            image = filename
+        else:
+            if filename.endswith(("png", "jpg", "jpeg", "gif")):
+                source = os.path.join(os.path.dirname(image), filename)
+                target = os.path.join(BASEDIR, 'static\img\\', filename)
+
+                try:
+                    shutil.copyfile(source, target)
+                    image = filename
+                except IOError as e:
+                    raise ValidationError("Unable to copy file. %s" % e, 'image')
+            else:
+                raise ValidationError('Wrong value, must be whole path , wrong format of file.', 'image')
+    return image
 
 
 class Comment(db.Model):
