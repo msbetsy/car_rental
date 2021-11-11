@@ -283,7 +283,7 @@ def show_post(post_id):
 
             :param number: The number of parent_comment.
             :type number: int
-            :return final: List of comments.
+            :return: List of comments.
             :rtype: list
             """
             items = comment_ids[number]

@@ -67,9 +67,9 @@ class Role(db.Model):
     def has_permission(self, permission):
         """Checks if user has permission.
 
-        :param permission: The name of the permission.
+        :param permission: The name of the permission
         :type permission: int
-        :return: Information if object has permission.
+        :return: Information if object has permission
         :rtype: bool
         """
         return self.permissions & permission == permission
@@ -77,7 +77,7 @@ class Role(db.Model):
     def add_permission(self, permission):
         """Add permission if user doesn't have one.
 
-        :param permission: The name of the permission.
+        :param permission: The name of the permission
         :type permission: int
         """
         if not self.has_permission(permission):
@@ -86,7 +86,7 @@ class Role(db.Model):
     def remove_permission(self, permission):
         """Remove permission from user.
 
-        :param permission: The name of the permission.
+        :param permission: The name of the permission
         :type permission: int
         """
         if self.has_permission(permission):
@@ -100,7 +100,7 @@ class Role(db.Model):
     def __repr__(self):
         """Returns printable representation of Role's class object.
 
-        :return name: Name of the role.
+        :return: Name of the role
         :rtype: str
         """
         return '<Role %r>' % self.name
@@ -113,9 +113,9 @@ class AnonymousUser(AnonymousUserMixin):
     def can(self, permission):
         """Checks if user has permission.
 
-        :param permission: The name of the permission.
+        :param permission: The name of the permission
         :type permission: int
-        :return: Information that user doesn't have permission.
+        :return: Information that user doesn't have permission
         :rtype: bool
         """
         return False
@@ -123,7 +123,7 @@ class AnonymousUser(AnonymousUserMixin):
     def is_admin(self):
         """Checks if user is admin.
 
-        :return: Information that user isn't admin.
+        :return: Information that user isn't admin
         :rtype: bool
         """
         return False
@@ -160,9 +160,9 @@ class User(UserMixin, db.Model):
     def can(self, permission):
         """Checks if user has permission.
 
-        :param permission: The name of the permission.
+        :param permission: The name of the permission
         :type permission: int
-        :return: Information if user has permission.
+        :return: Information if user has permission
         :rtype: bool
         """
         return self.role is not None and self.role.has_permission(permission)
@@ -170,7 +170,7 @@ class User(UserMixin, db.Model):
     def is_admin(self):
         """Check if user is admin.
 
-        :return: The information if user is admin.
+        :return: The information if user is admin
         :rtype: bool
         """
         return self.can(Permission.ADMIN)
@@ -179,7 +179,7 @@ class User(UserMixin, db.Model):
     def password(self):
         """A getter function for the password.
 
-        :raises AttributeError: not readable attribute.
+        :raises AttributeError: not readable attribute
         """
         raise AttributeError('password is not a readable attribute')
 
@@ -187,7 +187,7 @@ class User(UserMixin, db.Model):
     def password(self, password):
         """A setter function for the password.
 
-        :param password: User's password.
+        :param password: User's password
         :type password: str
         """
         hash_and_salted_password = generate_password_hash(
@@ -200,9 +200,9 @@ class User(UserMixin, db.Model):
     def verify_password(self, password):
         """Check if password is correct.
 
-        :param password: User's password.
+        :param password: User's password
         :type password: str
-        :return: The information if the password matched.
+        :return: The information if the password matched
         :rtype: bool
         """
         return check_password_hash(self.password_hash, password)
@@ -210,7 +210,7 @@ class User(UserMixin, db.Model):
     def __repr__(self):
         """Returns printable representation of User's class object.
 
-        :return user_mail: User's email.
+        :return: User's email
         :rtype: str
         """
         user_mail = '<User %r>' % self.email
@@ -219,7 +219,7 @@ class User(UserMixin, db.Model):
     def to_json(self):
         """Convert user object to json.
 
-        :return json_user: user's data in dict.
+        :return: user's data in dict
         :rtype: dict
         """
         opinions = [url_for('api.show_opinion', opinion_id=opinion.id) for opinion in
@@ -251,7 +251,7 @@ class User(UserMixin, db.Model):
     def to_json_user_data(self):
         """Convert user object to json, used for user not admin.
 
-        :return json_user: user's data in dict.
+        :return: user's data in dict
         :rtype: dict
         """
         json_user = {
@@ -267,10 +267,10 @@ class User(UserMixin, db.Model):
     def from_json(json_data):
         """Create User object from json data.
 
-        :param json_data: Data in json.
+        :param json_data: Data in json
         :type json_data: dict
         :raises ValidationError: wrong attribute
-        :return: User object.
+        :return: User object
         :rtype: object
         """
         name = json_data.get('name')
@@ -300,9 +300,9 @@ class User(UserMixin, db.Model):
     def update_from_json(user_id, json_data):
         """Update User object from json data.
 
-        :param user_id: User id.
+        :param user_id: User id
         :type user_id: int
-        :param json_data: Data in json.
+        :param json_data: Data in json
         :type json_data: dict
         :raises ValidationError: wrong attribute
         """
@@ -346,7 +346,7 @@ class User(UserMixin, db.Model):
     def generate_jwt_token(self):
         """Generates jwt token.
 
-        :return: JWT token.
+        :return: JWT token
         :rtype: str
         """
         payload = {
@@ -359,11 +359,11 @@ class User(UserMixin, db.Model):
 def check_if_null(variable, variable_name):
     """Check if value in json dict is null or None.
 
-    :param variable: Data from json.
+    :param variable: Data from json
     :type variable: any
-    :param variable_name: Name of variable.
+    :param variable_name: Name of variable
     :type variable_name: str
-    :raises ValidationError: variable can't be null.
+    :raises ValidationError: variable can't be null
     """
     if variable is None or variable == '':
         raise ValidationError(f"{variable_name} can't be null", variable_name)
@@ -373,9 +373,9 @@ def check_if_null(variable, variable_name):
 def load_user(user_id):
     """Provides user session management - loading user.
 
-    :param user_id: The ID of the user.
+    :param user_id: The ID of the user
     :type user_id: str
-    :return: The corresponding user object.
+    :return: The corresponding user object
     :rtype: class '__main__.User'
     """
     return User.query.get(int(user_id))
@@ -395,7 +395,7 @@ class Opinion(db.Model):
     def to_json(self):
         """Convert opinion object to json.
 
-        :return json_opinion: data in dict.
+        :return: data in dict
         :rtype: dict
         """
         json_opinion = {
@@ -411,10 +411,10 @@ class Opinion(db.Model):
     def from_json(json_data):
         """Create Opinion object from json data.
 
-        :param json_data: Data in json.
+        :param json_data: Data in json
         :type json_data: dict
         :raises ValidationError: wrong attribute
-        :return: Opinion object.
+        :return: Opinion object
         :rtype: object
         """
         text = json_data.get('text')
@@ -443,7 +443,7 @@ class Car(db.Model):
     def to_json(self):
         """Convert car object to json.
 
-        :return json_car: data in dict.
+        :return: data in dict
         :rtype: dict
         """
         img = url_for('static', filename='img/' + self.image)
@@ -461,10 +461,10 @@ class Car(db.Model):
     def from_json(json_data):
         """Create Car object from json data.
 
-        :param json_data: Data in json.
+        :param json_data: Data in json
         :type json_data: dict
         :raises ValidationError: wrong attribute
-        :return: Car object.
+        :return: Car object
         :rtype: object
         """
         name = json_data.get('name')
@@ -505,9 +505,9 @@ class Car(db.Model):
     def update_from_json(car_id, json_data):
         """Update Car object from json data.
 
-        :param car_id: Car id.
+        :param car_id: Car id
         :type car_id: int
-        :param json_data: Data in json.
+        :param json_data: Data in json
         :type json_data: dict
         :raises ValidationError: wrong attribute
         """
@@ -563,7 +563,7 @@ class Rental(db.Model):
     def to_json(self):
         """Convert rental object to json.
 
-        :return json_rental: data in dict.
+        :return: data in dict
         :rtype: dict
         """
         json_rental = {
@@ -579,10 +579,10 @@ class Rental(db.Model):
     def from_json(json_data):
         """Create Rental object from json data.
 
-        :param json_data: Data in json.
+        :param json_data: Data in json
         :type json_data: dict
         :raises ValidationError: wrong attribute
-        :return: Rental object.
+        :return: Rental object
         :rtype: object
         """
         user_id = json_data.get('user_id')
@@ -629,11 +629,11 @@ class Rental(db.Model):
 def check_date(date, name_date: str):
     """Check if check_date in json dict is correct.
 
-    :param date: Date from json.
+    :param date: Date from json
     :type date: int
-    :param name_date: Name of date.
+    :param name_date: Name of date
     :type name_date: str
-    :raises ValidationError: variable is wrong.
+    :raises ValidationError: variable is wrong
     """
     if not isinstance(date, int):
         raise ValidationError('Wrong value, not int.', name_date)
@@ -666,7 +666,7 @@ class NewsPost(db.Model):
     def to_json(self):
         """Convert NewsPost object to json.
 
-        :return json_news_post: data in dict.
+        :return: data in dict
         :rtype: dict
         """
         comments_list = [comment for comment in Comment.query.filter_by(post_id=self.id).all()]
@@ -688,10 +688,10 @@ class NewsPost(db.Model):
     def from_json(json_data):
         """Create NewsPost object from json data.
 
-        :param json_data: Data in json.
+        :param json_data: Data in json
         :type json_data: dict
         :raises ValidationError: wrong attribute
-        :return: NewsPost object.
+        :return: NewsPost object
         :rtype: object
         """
         date = datetime.today().strftime("%Y-%m-%d")
@@ -721,13 +721,13 @@ class NewsPost(db.Model):
 def get_all_comments_for_post(parent_comment, list_of_comments, list_of_parents_comments):
     """Create a list of comments including hierarchy of child comments.
 
-    :param parent_comment: Value of parent comment (ID).
+    :param parent_comment: Value of parent comment (ID)
     :type parent_comment: int
-    :param list_of_comments: List of comments.
+    :param list_of_comments: List of comments
     :type list_of_comments: list
-    :param list_of_parents_comments: List of parent comments (IDs).
+    :param list_of_parents_comments: List of parent comments (IDs)
     :type list_of_parents_comments: list
-    :return all_comments: All comments with child comments.
+    :return: All comments with child comments
     :rtype: list
     """
     all_comments = []
@@ -748,11 +748,11 @@ def get_all_comments_for_post(parent_comment, list_of_comments, list_of_parents_
 def check_img_name(image, old_image=None):
     """Check if name of image is secure, if so copy it to img folder.
 
-    :param image: Path to the image.
+    :param image: Path to the image
     :type image: string
-    :param old_image: Name of old image in db.
+    :param old_image: Name of old image in db
     :type old_image: string
-    :return image: Safe filename.
+    :return: Safe filename
     :rtype: string
     """
     is_file = os.path.isfile(os.path.join(BASEDIR, 'static\img\\', os.path.basename(image)))
@@ -791,7 +791,7 @@ class Comment(db.Model):
     def to_json(self):
         """Convert comment object to json.
 
-        :return json_comment: data in dict.
+        :return: data in dict
         :rtype: dict
         """
         if self.parent_comment == 0:
@@ -813,10 +813,10 @@ class Comment(db.Model):
     def from_json(json_data):
         """Create Comment object from json data.
 
-        :param json_data: Data in json.
+        :param json_data: Data in json
         :type json_data: dict
         :raises ValidationError: wrong attribute
-        :return: Comment object.
+        :return: Comment object
         :rtype: object
         """
         text = json_data.get('text')
