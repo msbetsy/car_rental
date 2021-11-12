@@ -239,6 +239,9 @@ table.table-reservations > thead > tr > th{
 .page-item.disabled .page-link > a{
     color: #dabdbd;
 }
+.pagination{
+    padding: 1.3rem 0 0 0;
+}
 .pagination > li > a{
     background-color: white;
     color: #7d5a5a;
@@ -259,6 +262,9 @@ table.table-reservations > thead > tr > th{
 .pagination > .active > a:hover{
     background-color: #7d5a5a !Important;
     border: solid 1px #7d5a5a;
+}
+.pagination-nav{
+    margin: 0 auto;
 }
 
 /* Footer */
