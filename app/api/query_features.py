@@ -7,7 +7,7 @@ from sqlalchemy.sql.expression import BinaryExpression
 from sqlalchemy.types import DateTime
 from datetime import datetime
 
-SIGNS_REGEX = re.compile(r'(.*)\[(gte|gt|lte|lt)\]')
+SIGNS_REGEX = re.compile(r'(.*)\[(gte|gt|lte|lt|like)\]')
 
 
 def get_pagination(sql_query, api_func_name):
@@ -101,7 +101,8 @@ def _get_filter(column, sign, value):
         "lt": column < value,
         "gte": column >= value,
         "gt": column > value,
-        "=": column == value
+        "=": column == value,
+        "like": column.like(value)
     }
 
     return operator_mapping[sign]
@@ -129,3 +130,58 @@ def apply_filter(sql_query, model):
                 sql_query = sql_query.filter(filtered)
 
     return sql_query
+
+
+def apply_args_filter(list_to_filter):
+    """Filter list by operators.
+
+    :param list_to_filter: list with json dicts to be filtered
+    :type list_to_filter: list
+    :return: filtered list
+    :rtype: list
+    """
+    for filter_by, value in request.args.items():
+        filtered_list = []
+        if '_number' in filter_by:
+            sign = "="
+            match = SIGNS_REGEX.match(filter_by)
+            if match:
+                filter_by, sign = match.groups()
+            if sign != 'like' and filter_by in list_to_filter[0].keys():
+                for list_item in list_to_filter:
+                    if _get_filter_list(list_item[filter_by], sign, int(value)):
+                        filtered_list.append(list_item)
+                list_to_filter = filtered_list
+
+    return list_to_filter
+
+
+def _get_filter_list(json_value, sign, value):
+    """Filter list by operators.
+
+    :param json_value: json value to be filtered
+    :type json_value: int
+    :param sign: the operator
+    :type sign: str
+    :param value: value to filter
+    :type value: int
+    :return: information whether the json is within the criteria
+    :rtype: bool
+    """
+    ok_with_filter = False
+    if sign == "lte":
+        if json_value <= value:
+            ok_with_filter = True
+    elif sign == "lt":
+        if json_value < value:
+            ok_with_filter = True
+    elif sign == "gte":
+        if json_value >= value:
+            ok_with_filter = True
+    elif sign == "gt":
+        if json_value > value:
+            ok_with_filter = True
+    elif sign == "=":
+        if json_value == value:
+            ok_with_filter = True
+    return ok_with_filter
