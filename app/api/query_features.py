@@ -1,7 +1,7 @@
 """This module stores query features: pagination, filtering, sorting (API)."""
 import re
 from flask_sqlalchemy import BaseQuery, DefaultMeta
-from flask import request, url_for, current_app
+from flask import request, url_for
 from sqlalchemy.orm.attributes import InstrumentedAttribute
 from sqlalchemy.sql.expression import BinaryExpression
 from sqlalchemy.types import DateTime
@@ -21,22 +21,24 @@ def get_pagination(sql_query, api_func_name):
     :rtype: tuple[list, dict]
     """
     page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', current_app.config.get('POSTS_PER_PAGE', 10), type=int)
-    request_params = {key: value for key, value in request.args.items() if key != 'page'}
-    paginate_object = sql_query.paginate(page=page, per_page=per_page, error_out=False)
-    pagination = {
-        'number_of_all_pages': paginate_object.pages,
-        'number_of_all_records': paginate_object.total,
-        'current_page_url': url_for(api_func_name, page=page, **request_params)
-    }
+    per_page = request.args.get('per_page', type=int)
+    if per_page:
+        request_params = {key: value for key, value in request.args.items() if key != 'page'}
+        paginate_object = sql_query.paginate(page=page, per_page=per_page, error_out=False)
+        pagination = {
+            'number_of_all_pages': paginate_object.pages,
+            'number_of_all_records': paginate_object.total,
+            'current_page_url': url_for(api_func_name, page=page, **request_params)
+        }
 
-    if paginate_object.has_next:
-        pagination['next_page'] = url_for(api_func_name, page=paginate_object.next_num, **request_params)
+        if paginate_object.has_next:
+            pagination['next_page'] = url_for(api_func_name, page=paginate_object.next_num, **request_params)
 
-    if paginate_object.has_prev:
-        pagination['previous_page'] = url_for(api_func_name, page=paginate_object.prev_num, **request_params)
-
-    return paginate_object.items, pagination
+        if paginate_object.has_prev:
+            pagination['previous_page'] = url_for(api_func_name, page=paginate_object.prev_num, **request_params)
+        return paginate_object.items, pagination
+    else:
+        return sql_query.all(), None
 
 
 def get_args(json, params):
@@ -95,7 +97,7 @@ def _get_filter(column, sign, value):
     """
 
     if isinstance(column.type, DateTime):
-        value = datetime.strptime(value, '%Y-%m-%d')
+        value = datetime.strptime(value, '%Y-%m-%d_%H:%M:%S')
     operator_mapping = {
         "lte": column <= value,
         "lt": column < value,
