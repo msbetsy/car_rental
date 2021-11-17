@@ -235,8 +235,13 @@ class User(UserMixin, db.Model):
                  NewsPost.query.filter_by(author_id=self.id).all()]
 
         json_user = {
+            'id': self.id,
             'name': self.name,
             'surname': self.surname,
+            'email': self.email,
+            'telephone': self.telephone,
+            'address': self.address,
+            'role_id': self.role_id,
             'post_number': len(self.posts),
             'posts': posts,
             'rentals_number': len(self.car_rented),
@@ -399,11 +404,11 @@ class Opinion(db.Model):
         :rtype: dict
         """
         json_opinion = {
+            "id": self.id,
             "author_url": url_for('api.get_user', user_to_show_id=self.author_id),
-            "name": User.query.get(self.author_id).name,
             "text": self.text,
             "image_url": url_for('static', filename='img/' + self.image),
-            "date": self.date.strftime("%m/%d/%Y, %H:%M:%S")
+            "date": self.date.strftime("%d/%m/%Y, %H:%M:%S")
         }
         return json_opinion
 
@@ -447,13 +452,20 @@ class Car(db.Model):
         :rtype: dict
         """
         img = url_for('static', filename='img/' + self.image)
+        car_rentals = [rental for rental in Rental.query.filter_by(cars_id=self.id).all()]
+        rentals = [
+            url_for('api.show_rental', car_id=self.id, user_id=rental.users_id,
+                    date_time=int(rental.from_date.strftime('%Y%m%d%H%M'))) for
+            rental in car_rentals]
         json_car = {
-            'url': url_for('api.get_car', car_id=self.id),
+            'id': self.id,
             'name': self.name,
             'price': self.price,
             'year': self.year,
             'model': self.model,
-            'image': img
+            'image': img,
+            'rentals_url': rentals,
+            'rentals_number': len(car_rentals)
         }
         return json_car
 
@@ -567,11 +579,12 @@ class Rental(db.Model):
         :rtype: dict
         """
         json_rental = {
+            'id': {"car": self.cars_id, "user": self.users_id, "from": self.from_date.strftime("%d/%m/%Y, %H:%M")},
             'user_url': url_for('api.get_user', user_to_show_id=self.users_id),
             'car_url': url_for('api.get_car', car_id=self.cars_id),
-            'from_date': self.from_date.strftime("%m/%d/%Y, %H:%M"),
-            'to_date': self.to_date.strftime("%m/%d/%Y, %H:%M"),
-            'available_from': self.available_from.strftime("%m/%d/%Y, %H:%M")
+            'from_date': self.from_date.strftime("%d/%m/%Y, %H:%M:%S"),
+            'to_date': self.to_date.strftime("%d/%m/%Y, %H:%M:%S"),
+            'available_from': self.available_from.strftime("%d/%m/%Y, %H:%M:%S")
         }
         return json_rental
 
@@ -675,12 +688,14 @@ class NewsPost(db.Model):
         comments = get_all_comments_for_post(parent_comment=0, list_of_comments=comments_list,
                                              list_of_parents_comments=comment_parents)
         json_news_post = {
+            'id': self.id,
             'user_url': url_for('api.get_user', user_to_show_id=self.author_id),
             'title': self.title,
             'text': self.body,
             'date': self.date,
             'img_url': url_for('static', filename='img/' + self.img_url),
-            'comments_urls': comments
+            'comments_urls': comments,
+            'comments_number': len(comments_list)
         }
         return json_news_post
 
@@ -800,10 +815,11 @@ class Comment(db.Model):
             upper_comment = url_for('api.show_comment', comment_id=self.parent_comment)
 
         json_comment = {
+            'id': self.id,
             'text': self.text,
             'post_url': url_for('api.show_post', post_id=self.post_id),
             'author_url': url_for('api.get_user', user_to_show_id=self.author_id),
-            'date': self.date.strftime("%m/%d/%Y, %H:%M:%S"),
+            'date': self.date.strftime("%d/%m/%Y, %H:%M:%S"),
             'upper_comment_url': upper_comment
         }
 
