@@ -15,7 +15,11 @@ def forbidden(e):
 @main.app_errorhandler(404)
 def page_not_found(e):
     if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
-        response = jsonify({'error': 'not found', 'success': False})
+        if e.description != 'The requested URL was not found on the server. If you entered the URL manually please ' \
+                            'check your spelling and try again.':
+            response = jsonify({'error': e.description, 'success': False})
+        else:
+            response = jsonify({'error': 'not found', 'success': False})
         response.status_code = 404
         return response
     return render_template('status_codes/404.html'), 404
