@@ -4,6 +4,7 @@ from datetime import datetime
 from ..models import Rental, Permission, User
 from . import api
 from app.api.decorators import token_required, permission_required, validate_json_content_type
+from .query_features import apply_filter, get_args, sort_by
 from .errors import bad_request
 from .. import db
 
@@ -11,8 +12,10 @@ from .. import db
 @api.route('/rentals/', methods=['GET'])
 @token_required
 @permission_required(Permission.ADMIN)
-def show_rentals():
-    query = Rental.query.all()
+def show_rentals(users_id: int):
+    query = Rental.query
+    query = sort_by(query, Rental)
+    query = apply_filter(query, Rental)
     rentals = [rental.to_json() for rental in query]
     return jsonify({'success': True, 'data': rentals})
 
@@ -28,8 +31,9 @@ def show_rental(users_id: int, car_id: int, user_id: int, date_time: int):
         bad_request(message="Wrong from: acceptable format: YmdHM")
     query = Rental.query.get_or_404({"cars_id": car_id, "users_id": user_id, "from_date": from_date},
                                     description='Rental not found')
-
-    return jsonify({'success': True, 'data': query.to_json()})
+    params = request.args.get('params', "")
+    rental = get_args(query.to_json(), params)
+    return jsonify({'success': True, 'data': rental})
 
 
 @api.route('/rentals/', methods=['POST'])

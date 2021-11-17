@@ -2,6 +2,7 @@
 from flask import jsonify, request
 from app.api.decorators import validate_json_content_type, token_required, permission_required
 from app.api.errors import bad_request
+from .query_features import apply_filter, apply_args_filter, get_args, get_pagination, sort_by
 from ..models import Car, Permission
 from . import api
 from .. import db
@@ -9,15 +10,25 @@ from .. import db
 
 @api.route('/cars/', methods=['GET'])
 def get_all_cars():
-    query = Car.query.all()
-    cars = [car.to_json() for car in query]
-    return jsonify({'data': cars, 'number_of_records': len(query), 'success': True})
+    query = Car.query
+    query = sort_by(query, Car)
+    query = apply_filter(query, Car)
+    cars_with_pagination, pagination = get_pagination(query, 'api.get_all_cars')
+    params = request.args.get('params', "")
+    cars = [get_args(car.to_json(), params) for car in cars_with_pagination]
+    cars = apply_args_filter(cars)
+    if request.args.get('page') or request.args.get('per_page'):
+        return jsonify({'data': cars, 'number_of_records': len(cars), 'pagination': pagination, 'success': True})
+    else:
+        return jsonify({'data': cars, 'number_of_records': len(cars), 'success': True})
 
 
 @api.route('/cars/<int:car_id>/', methods=['GET'])
 def get_car(car_id: int):
     query = Car.query.get_or_404(car_id, description=f'Car with id {car_id} not found')
-    return jsonify({'data': query.to_json(), 'success': True})
+    params = request.args.get('params', "")
+    car = get_args(query.to_json(), params)
+    return jsonify({'data': car, 'success': True})
 
 
 @api.route('/cars/', methods=['POST'])
