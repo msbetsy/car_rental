@@ -11,6 +11,8 @@ from .. import db
 @validate_json_content_type
 def register():
     args = request.get_json()
+    if 'email' not in args:
+        return bad_request(message='No email')
     if User.query.filter(User.email == args['email']).first():
         return conflict(message=f'User with email {args["email"]} already exists')
 
