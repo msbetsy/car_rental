@@ -8,8 +8,8 @@ def bad_request(message, variable=None):
     if variable is None:
         response = jsonify({'error': 'bad request', 'message': message, 'success': False})
     else:
-        response = jsonify({'error_value_key': variable,
-                            'error': {'error': 'bad request', 'message': message, 'success': False}})
+        response = jsonify({'error_value_key': variable, 'success': False,
+                            'error': {'error': 'bad request', 'message': message}})
     response.status_code = 400
     return response
 
