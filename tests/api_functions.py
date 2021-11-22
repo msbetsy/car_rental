@@ -1,4 +1,5 @@
 """This module stores functions used for testing API."""
+import unittest
 import flask.testing
 
 
@@ -58,3 +59,77 @@ def admin(client):
 
     client.post('/api/v1/auth/register/', json=admin_user)
     return admin_user
+
+
+def check_content_type(response: flask.wrappers.Response, check_equal, check_false):
+    """Function for testing content type.
+
+    :param response: The response for request
+    :param check_equal: Method that checks if the values are equal
+    :type check_equal: unittest.TestCase
+    :param check_false: Method that checks if the values is false
+    :type check_false: unittest.TestCase
+    """
+    response_data = response.get_json()
+    check_equal(response.status_code, 415)
+    check_equal(response.headers['Content-Type'], 'application/json')
+    check_equal(response_data['error'], 'unsupported media type')
+    check_equal(response_data['message'], 'Content type must be: application/json')
+    check_false(response_data['success'])
+
+
+def check_missing_token(response: flask.wrappers.Response, check_equal, check_false, check_not_in):
+    """Function for testing missing token.
+
+    :param response: The response for request
+    :param check_equal: Method that checks if the values are equal
+    :type check_equal: unittest.TestCase
+    :param check_false: Method that checks if the values is false
+    :type check_false: unittest.TestCase
+    :param check_not_in: Method that checks if the values is not in container
+    :type check_not_in: unittest.TestCase
+    """
+    response_data = response.get_json()
+    check_equal(response.status_code, 400)
+    check_false(response_data['success'])
+    check_not_in('data', response_data)
+    check_equal(response_data['error'], 'bad request')
+    check_equal(response_data['message'], 'No Authorization token')
+
+
+def check_missing_token_value(response: flask.wrappers.Response, check_equal, check_false, check_not_in):
+    """Function for testing missing token value.
+
+    :param response: The response for request
+    :param check_equal: Method that checks if the values are equal
+    :type check_equal: unittest.TestCase
+    :param check_false: Method that checks if the values is false
+    :type check_false: unittest.TestCase
+    :param check_not_in: Method that checks if the values is not in container
+    :type check_not_in: unittest.TestCase
+    """
+    response_data = response.get_json()
+    check_equal(response.status_code, 400)
+    check_false(response_data['success'])
+    check_not_in('data', response_data)
+    check_equal(response_data['error'], 'bad request')
+    check_equal(response_data['message'], 'No token, log in or register')
+
+
+def check_missing_token_wrong_value(response: flask.wrappers.Response, check_equal, check_false, check_not_in):
+    """Function for testing wrong token value.
+
+    :param response: The response for request
+    :param check_equal: Method that checks if the values are equal
+    :type check_equal: unittest.TestCase
+    :param check_false: Method that checks if the values is false
+    :type check_false: unittest.TestCase
+    :param check_not_in: Method that checks if the values is not in container
+    :type check_not_in: unittest.TestCase
+    """
+    response_data = response.get_json()
+    check_equal(response.status_code, 401)
+    check_false(response_data['success'])
+    check_not_in('data', response_data)
+    check_equal(response_data['error'], 'unauthorized')
+    check_equal(response_data['message'], 'Invalid token. Please login or register')
