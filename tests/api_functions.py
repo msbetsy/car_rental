@@ -1,6 +1,8 @@
 """This module stores functions used for testing API."""
 import unittest
 import flask.testing
+from app.models import User
+from app import db
 
 
 def token(client, test_user):
@@ -20,11 +22,9 @@ def token(client, test_user):
     return response.get_json()['token']
 
 
-def user(client):
-    """Register user.
+def create_user():
+    """Add user to db.
 
-    :param client: Client of app
-    :type client: flask.testing.FlaskClient
     :return: User data
     :rtype: dict
     """
@@ -35,16 +35,15 @@ def user(client):
         'password': 'password',
         'email': 'test@test.com'
     }
-
-    client.post('/api/v1/auth/register/', json=test_user)
+    u = User(**test_user)
+    db.session.add(u)
+    db.session.commit()
     return test_user
 
 
-def admin(client):
-    """Register admin.
+def create_admin():
+    """Add admin to db.
 
-    :param client: Client of app -> admin
-    :type client: flask.testing.FlaskClient
     :return: Admin data
     :rtype: dict
     """
@@ -53,11 +52,13 @@ def admin(client):
         'surname': 'admin',
         'telephone': 12345,
         'password': 'password',
-        'email': 'admin@test.com',
-        'role_id': 3
+        'email': 'admin@test.com'
     }
-
-    client.post('/api/v1/auth/register/', json=admin_user)
+    u = User(**admin_user)
+    db.session.add(u)
+    db.session.commit()
+    u.role_id = 3
+    db.session.commit()
     return admin_user
 
 
