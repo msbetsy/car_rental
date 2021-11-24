@@ -62,6 +62,27 @@ def create_admin():
     return admin_user
 
 
+def create_moderator():
+    """Add moderator to db.
+
+    :return: Moderator data
+    :rtype: dict
+    """
+    moderator_user = {
+        'name': 'moderator',
+        'surname': 'moderator',
+        'telephone': 12345,
+        'password': 'password',
+        'email': 'moderator@test.com'
+    }
+    u = User(**moderator_user)
+    db.session.add(u)
+    db.session.commit()
+    u.role_id = 2
+    db.session.commit()
+    return moderator_user
+
+
 def check_content_type(response: flask.wrappers.Response, check_equal, check_false):
     """Function for testing content type.
 
@@ -134,3 +155,20 @@ def check_missing_token_wrong_value(response: flask.wrappers.Response, check_equ
     check_not_in('data', response_data)
     check_equal(response_data['error'], 'unauthorized')
     check_equal(response_data['message'], 'Invalid token. Please login or register')
+
+
+def check_permissions(response: flask.wrappers.Response, check_equal, check_false):
+    """Function for testing permissions.
+
+    :param response: The response for request
+    :param check_equal: Method that checks if the values are equal
+    :type check_equal: unittest.TestCase
+    :param check_false: Method that checks if the values is false
+    :type check_false: unittest.TestCase
+    """
+    response_data = response.get_json()
+    check_equal(response.status_code, 403)
+    check_equal(response.headers['Content-Type'], 'application/json')
+    check_false(response_data['success'])
+    check_equal(response_data['error'], 'forbidden')
+    check_equal(response_data['message'], 'Insufficient permissions')

@@ -2,8 +2,8 @@
 import unittest
 from app import create_app, db
 from app.models import Role, User
-from tests.api_functions import token, create_user, create_admin, check_content_type, check_missing_token, \
-    check_missing_token_value, check_missing_token_wrong_value
+from tests.api_functions import token, create_user, create_admin, create_moderator, check_content_type, \
+    check_missing_token, check_missing_token_value, check_missing_token_wrong_value, check_permissions
 
 
 def register():
@@ -187,6 +187,8 @@ class AuthenticationTestCase(unittest.TestCase):
         self.token = token(self.client, self.user)
         self.user_admin = create_admin()
         self.token_admin = token(self.client, self.user_admin)
+        self.user_moderator = create_moderator()
+        self.token_moderator = token(self.client, self.user_moderator)
 
     def tearDown(self):
         db.session.remove()
@@ -218,6 +220,23 @@ class AuthenticationTestCase(unittest.TestCase):
             'Accept': 'application/json',
             'Content-Type': 'application/json'
         }
+
+    # Test permissions
+    def test_insufficient_permissions(self):
+        """Test permissions."""
+        # Check permissions for update_user_by_admin
+        user_to_edit_id = User.query.filter_by(email='test@test.com').first().id
+        api_headers = self.get_api_headers_admin()
+
+        # Test user permissions
+        api_headers['Authorization'] = f'Bearer {self.token}'
+        request = update_user_by_admin_correct_request(self.client, api_headers, user_to_edit_id)
+        check_permissions(request, self.assertEqual, self.assertFalse)
+
+        # Test moderator permissions
+        api_headers['Authorization'] = f'Bearer {self.token_moderator}'
+        request = update_user_by_admin_correct_request(self.client, api_headers, user_to_edit_id)
+        check_permissions(request, self.assertEqual, self.assertFalse)
 
     # Testing methods connected with admin
     def test_update_user_by_admin(self):
