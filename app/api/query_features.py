@@ -22,7 +22,7 @@ def get_pagination(sql_query, api_func_name):
     """
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', type=int)
-    if per_page:
+    if per_page and per_page > 0 and page > 0:
         request_params = {key: value for key, value in request.args.items() if key != 'page'}
         paginate_object = sql_query.paginate(page=page, per_page=per_page, error_out=False)
         pagination = {
