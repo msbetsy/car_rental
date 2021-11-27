@@ -172,3 +172,41 @@ def check_permissions(response: flask.wrappers.Response, check_equal, check_fals
     check_false(response_data['success'])
     check_equal(response_data['error'], 'forbidden')
     check_equal(response_data['message'], 'Insufficient permissions')
+
+
+def request_with_features(url=None, sort_by=None, params=None, page="1", per_page=None, **kwargs):
+    """Function which change URL address depending on the query features.
+
+    :param url: URL address
+    :type url: str
+    :param sort_by: Names of variables used for sorting separated by a comma
+    :type sort_by: str
+    :param params: Names of variables which will be hidden separated by a comma
+    :type params: str
+    :param page: Value of paginated page
+    :type page: str
+    :param per_page: Number of records per page
+    :type per_page: str
+    :param kwargs: jk
+    :type kwargs: dict
+    :return: Modified URL
+    :rtype: str
+    """
+    if sort_by is not None or params is not None or page is not None or per_page \
+            is not None or kwargs:
+        url = "".join((url, "?"))
+
+    if sort_by is not None:
+        url = "".join((url, "sort=", sort_by, "&"))
+    if params is not None:
+        url = "".join((url, "params=", params, "&"))
+    if per_page is not None:
+        url = "".join((url, "page==", page, "&"))
+        url = "".join((url, "per_page==", per_page, "&"))
+    for key, value in kwargs.items():
+        url = "".join((url, value, "&"))
+    if url[-1] == "&":
+        changed_url = url[:-1]
+    else:
+        changed_url = url
+    return changed_url
