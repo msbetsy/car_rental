@@ -37,7 +37,7 @@ def show_all_users_correct_request(client, api_headers):
 
 
 class UsersTestCase(unittest.TestCase):
-    """Test authentication module."""
+    """Test users module."""
 
     def setUp(self):
         self.app = create_app('testing')
@@ -260,56 +260,77 @@ class UsersTestCase(unittest.TestCase):
                            }
         self.assertDictEqual(expected_result, response_data)
 
+    # Test permissions
+    def test_insufficient_permissions(self):
+        """Test permissions."""
+        api_headers = self.get_api_headers_admin()
 
-# Test permissions
-def test_insufficient_permissions(self):
-    """Test permissions."""
-    # Check permissions for get_user
-    user_id = User.query.filter_by(email='test@test.com').first().id
-    api_headers = self.get_api_headers_admin()
+        # Check permissions for get_user
+        user_id = User.query.filter_by(email='test@test.com').first().id
 
-    # Test user permissions
-    api_headers['Authorization'] = f'Bearer {self.token}'
-    response = show_user_correct_request(self.client, user_id, api_headers)
-    check_permissions(response, self.assertEqual, self.assertFalse)
+        # Test user permissions
+        api_headers['Authorization'] = f'Bearer {self.token}'
+        response = show_user_correct_request(self.client, user_id, api_headers)
+        check_permissions(response, self.assertEqual, self.assertFalse)
 
-    # Test moderator permissions
-    api_headers['Authorization'] = f'Bearer {self.token_moderator}'
-    response = show_user_correct_request(self.client, user_id, api_headers)
-    check_permissions(response, self.assertEqual, self.assertFalse)
+        # Test moderator permissions
+        api_headers['Authorization'] = f'Bearer {self.token_moderator}'
+        response = show_user_correct_request(self.client, user_id, api_headers)
+        check_permissions(response, self.assertEqual, self.assertFalse)
 
+        # Check permissions for get_all_users
 
-# Testing decorators connected with values of request -> tokens
-def test_missing_token_value(self):
-    """Test if token has no value."""
+        # Test user permissions
+        api_headers['Authorization'] = f'Bearer {self.token}'
+        response = show_all_users_correct_request(self.client, api_headers)
+        check_permissions(response, self.assertEqual, self.assertFalse)
 
-    user_id = User.query.filter_by(email='test@test.com').first().id
-    api_headers = self.get_api_headers_admin()
-    api_headers['Authorization'] = 'Bearer'
+        # Test moderator permissions
+        api_headers['Authorization'] = f'Bearer {self.token_moderator}'
+        response = show_all_users_correct_request(self.client, api_headers)
+        check_permissions(response, self.assertEqual, self.assertFalse)
 
-    # Check get_user
-    response = show_user_correct_request(self.client, user_id, api_headers)
-    check_missing_token_value(response, self.assertEqual, self.assertFalse, self.assertNotIn)
+    # Testing decorators connected with values of request -> tokens
+    def test_missing_token_value(self):
+        """Test if token has no value."""
 
+        user_id = User.query.filter_by(email='test@test.com').first().id
+        api_headers = self.get_api_headers_admin()
+        api_headers['Authorization'] = 'Bearer'
 
-def test_missing_token_wrong_value(self):
-    """Check if token has wrong value"""
+        # Check get_user
+        response = show_user_correct_request(self.client, user_id, api_headers)
+        check_missing_token_value(response, self.assertEqual, self.assertFalse, self.assertNotIn)
 
-    user_id = User.query.filter_by(email='test@test.com').first().id
-    api_headers = self.get_api_headers_admin()
-    api_headers['Authorization'] = 'Bearer token'
+        # Check get_all_users
+        response = show_all_users_correct_request(self.client, api_headers)
+        check_missing_token_value(response, self.assertEqual, self.assertFalse, self.assertNotIn)
 
-    # Check get_user
-    response = show_user_correct_request(self.client, user_id, api_headers)
-    check_missing_token_wrong_value(response, self.assertEqual, self.assertFalse, self.assertNotIn)
+    def test_missing_token_wrong_value(self):
+        """Check if token has wrong value"""
 
+        user_id = User.query.filter_by(email='test@test.com').first().id
+        api_headers = self.get_api_headers_admin()
+        api_headers['Authorization'] = 'Bearer token'
 
-def test_missing_token(self):
-    """Check if token exists"""
-    user_id = User.query.filter_by(email='test@test.com').first().id
-    api_headers = self.get_api_headers_admin()
-    del api_headers['Authorization']
+        # Check get_user
+        response = show_user_correct_request(self.client, user_id, api_headers)
+        check_missing_token_wrong_value(response, self.assertEqual, self.assertFalse, self.assertNotIn)
 
-    # Check get_user
-    response = show_user_correct_request(self.client, user_id, api_headers)
-    check_missing_token(response, self.assertEqual, self.assertFalse, self.assertNotIn)
+        # Check get_all_users
+        response = show_all_users_correct_request(self.client, api_headers)
+        check_missing_token_wrong_value(response, self.assertEqual, self.assertFalse, self.assertNotIn)
+
+    def test_missing_token(self):
+        """Check if token exists"""
+        user_id = User.query.filter_by(email='test@test.com').first().id
+        api_headers = self.get_api_headers_admin()
+        del api_headers['Authorization']
+
+        # Check get_user
+        response = show_user_correct_request(self.client, user_id, api_headers)
+        check_missing_token(response, self.assertEqual, self.assertFalse, self.assertNotIn)
+
+        # Check get_all_users
+        response = show_all_users_correct_request(self.client, api_headers)
+        check_missing_token(response, self.assertEqual, self.assertFalse, self.assertNotIn)
