@@ -3,7 +3,7 @@ import unittest
 from app import create_app, db
 from app.models import Role, User
 from tests.api_functions import token, create_user, create_admin, create_moderator, check_missing_token_value, \
-    check_permissions, check_missing_token_wrong_value, check_missing_token
+    check_permissions, check_missing_token_wrong_value, check_missing_token, request_with_features
 
 
 def show_user_correct_request(client, user_id, api_headers):
@@ -22,6 +22,20 @@ def show_user_correct_request(client, user_id, api_headers):
     return response
 
 
+def show_all_users_correct_request(client, api_headers):
+    """Show all user data request.
+
+       :param client: Client of app
+       :type client: flask.testing.FlaskClient
+       :param api_headers: Request headers
+       :type api_headers: dict
+       :return: Response for the request
+       :rtype: flask.wrappers.Response
+       """
+    response = client.get('/api/v1/users/', headers=api_headers, follow_redirects=True)
+    return response
+
+
 class UsersTestCase(unittest.TestCase):
     """Test authentication module."""
 
@@ -34,10 +48,10 @@ class UsersTestCase(unittest.TestCase):
         self.client = self.app.test_client()
         self.user = create_user()
         self.token = token(self.client, self.user)
-        self.user_admin = create_admin()
-        self.token_admin = token(self.client, self.user_admin)
         self.user_moderator = create_moderator()
         self.token_moderator = token(self.client, self.user_moderator)
+        self.user_admin = create_admin()
+        self.token_admin = token(self.client, self.user_admin)
 
     def tearDown(self):
         db.session.remove()
@@ -103,9 +117,8 @@ class UsersTestCase(unittest.TestCase):
         self.assertDictEqual(expected_result, response_data)
 
         # Test request with features: params
-        response = self.client.get(
-            '/api/v1/users/{}/?params=comments,comments_number'.format(user.id),
-            headers=self.get_api_headers_admin(), follow_redirects=True)
+        response = self.client.get('/api/v1/users/{}/?params=comments,comments_number'.format(user.id),
+                                   headers=self.get_api_headers_admin(), follow_redirects=True)
         response_data = response.get_json()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.headers['Content-Type'], 'application/json')
@@ -180,16 +193,64 @@ class UsersTestCase(unittest.TestCase):
         db.session.commit()
         user_second.role_id = 2
         db.session.commit()
-        response = self.client.get(
-            '/api/v1/users/?sort=-id&params=comments,comments_number,opinions,opinions_number,posts,post_number&'
-            'id[gte]=4&id[the]=5',
-            headers=self.get_api_headers_admin(),
-            follow_redirects=True)
+
+        user = self.user
+        moderator = self.user_moderator
+        admin = self.user_admin
+
+        del user_first_dict['password']
+        del user_second_dict['password']
+        del user['password']
+        del moderator['password']
+        del admin['password']
+
+        user['role_id'] = User.query.filter_by(email=self.user['email']).first().role_id
+        moderator['role_id'] = User.query.filter_by(email=self.user_moderator['email']).first().role_id
+        admin['role_id'] = User.query.filter_by(email=self.user_admin['email']).first().role_id
+
+        user['address'] = None
+        moderator['address'] = None
+        admin['address'] = None
+
+        # Test request without features
+        response = self.client.get(request_with_features(url='/api/v1/users/'), headers=self.get_api_headers_admin(),
+                                   follow_redirects=True)
+        users_data = {
+            'post_number': 0,
+            'posts': [],
+            'rentals_number': 0,
+            'rentals': [],
+            'comments_number': 0,
+            'comments': [],
+            'opinions_number': 0,
+            'opinions': []
+        }
+
+        expected_result = {'success': True,
+                           'number_of_records': 5,
+                           'data': [
+                               {**user, 'id': User.query.filter_by(email=self.user['email']).first().id, **users_data},
+                               {**moderator, 'id': User.query.filter_by(email=self.user_moderator['email']).first().id,
+                                **users_data},
+                               {**admin, 'id': User.query.filter_by(email=self.user_admin['email']).first().id,
+                                **users_data},
+                               {**user_first_dict, 'id': 4, **users_data},
+                               {**user_second_dict, 'id': 5, **users_data}
+                           ]
+                           }
+        response_data = response.get_json()
+        self.assertDictEqual(expected_result, response_data)
+
+        # Test request with features
+        response = self.client.get(request_with_features(
+            url='/api/v1/users/', sort_by="-id",
+            params="comments,comments_number,opinions,opinions_number,posts,post_number",
+            filters="id[gte]=4&id[lte]=5"),
+            headers=self.get_api_headers_admin(), follow_redirects=True)
         response_data = response.get_json()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.headers['Content-Type'], 'application/json')
-        del user_first_dict['password']
-        del user_second_dict['password']
+
         expected_result = {'success': True,
                            'number_of_records': 2,
                            'data': [
@@ -199,52 +260,56 @@ class UsersTestCase(unittest.TestCase):
                            }
         self.assertDictEqual(expected_result, response_data)
 
-    # Test permissions
-    def test_insufficient_permissions(self):
-        """Test permissions."""
-        # Check permissions for get_user
-        user_id = User.query.filter_by(email='test@test.com').first().id
-        api_headers = self.get_api_headers_admin()
 
-        # Test user permissions
-        api_headers['Authorization'] = f'Bearer {self.token}'
-        response = show_user_correct_request(self.client, user_id, api_headers)
-        check_permissions(response, self.assertEqual, self.assertFalse)
+# Test permissions
+def test_insufficient_permissions(self):
+    """Test permissions."""
+    # Check permissions for get_user
+    user_id = User.query.filter_by(email='test@test.com').first().id
+    api_headers = self.get_api_headers_admin()
 
-        # Test moderator permissions
-        api_headers['Authorization'] = f'Bearer {self.token_moderator}'
-        response = show_user_correct_request(self.client, user_id, api_headers)
-        check_permissions(response, self.assertEqual, self.assertFalse)
+    # Test user permissions
+    api_headers['Authorization'] = f'Bearer {self.token}'
+    response = show_user_correct_request(self.client, user_id, api_headers)
+    check_permissions(response, self.assertEqual, self.assertFalse)
 
-    # Testing decorators connected with values of request -> tokens
-    def test_missing_token_value(self):
-        """Test if token has no value."""
+    # Test moderator permissions
+    api_headers['Authorization'] = f'Bearer {self.token_moderator}'
+    response = show_user_correct_request(self.client, user_id, api_headers)
+    check_permissions(response, self.assertEqual, self.assertFalse)
 
-        user_id = User.query.filter_by(email='test@test.com').first().id
-        api_headers = self.get_api_headers_admin()
-        api_headers['Authorization'] = 'Bearer'
 
-        # Check get_user
-        response = show_user_correct_request(self.client, user_id, api_headers)
-        check_missing_token_value(response, self.assertEqual, self.assertFalse, self.assertNotIn)
+# Testing decorators connected with values of request -> tokens
+def test_missing_token_value(self):
+    """Test if token has no value."""
 
-    def test_missing_token_wrong_value(self):
-        """Check if token has wrong value"""
+    user_id = User.query.filter_by(email='test@test.com').first().id
+    api_headers = self.get_api_headers_admin()
+    api_headers['Authorization'] = 'Bearer'
 
-        user_id = User.query.filter_by(email='test@test.com').first().id
-        api_headers = self.get_api_headers_admin()
-        api_headers['Authorization'] = 'Bearer token'
+    # Check get_user
+    response = show_user_correct_request(self.client, user_id, api_headers)
+    check_missing_token_value(response, self.assertEqual, self.assertFalse, self.assertNotIn)
 
-        # Check get_user
-        response = show_user_correct_request(self.client, user_id, api_headers)
-        check_missing_token_wrong_value(response, self.assertEqual, self.assertFalse, self.assertNotIn)
 
-    def test_missing_token(self):
-        """Check if token exists"""
-        user_id = User.query.filter_by(email='test@test.com').first().id
-        api_headers = self.get_api_headers_admin()
-        del api_headers['Authorization']
+def test_missing_token_wrong_value(self):
+    """Check if token has wrong value"""
 
-        # Check get_user
-        response = show_user_correct_request(self.client, user_id, api_headers)
-        check_missing_token(response, self.assertEqual, self.assertFalse, self.assertNotIn)
+    user_id = User.query.filter_by(email='test@test.com').first().id
+    api_headers = self.get_api_headers_admin()
+    api_headers['Authorization'] = 'Bearer token'
+
+    # Check get_user
+    response = show_user_correct_request(self.client, user_id, api_headers)
+    check_missing_token_wrong_value(response, self.assertEqual, self.assertFalse, self.assertNotIn)
+
+
+def test_missing_token(self):
+    """Check if token exists"""
+    user_id = User.query.filter_by(email='test@test.com').first().id
+    api_headers = self.get_api_headers_admin()
+    del api_headers['Authorization']
+
+    # Check get_user
+    response = show_user_correct_request(self.client, user_id, api_headers)
+    check_missing_token(response, self.assertEqual, self.assertFalse, self.assertNotIn)
