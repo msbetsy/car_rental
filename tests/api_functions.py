@@ -201,8 +201,8 @@ def request_with_features(url=None, sort_by=None, params=None, page="1", per_pag
     if params is not None:
         url = "".join((url, "params=", params, "&"))
     if per_page is not None:
-        url = "".join((url, "page==", page, "&"))
-        url = "".join((url, "per_page==", per_page, "&"))
+        url = "".join((url, "page=", page, "&"))
+        url = "".join((url, "per_page=", per_page, "&"))
     for key, value in kwargs.items():
         url = "".join((url, value, "&"))
     if url[-1] == "&":
