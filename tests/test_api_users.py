@@ -25,13 +25,13 @@ def show_user_correct_request(client, user_id, api_headers):
 def show_all_users_correct_request(client, api_headers):
     """Show all user data request.
 
-       :param client: Client of app
-       :type client: flask.testing.FlaskClient
-       :param api_headers: Request headers
-       :type api_headers: dict
-       :return: Response for the request
-       :rtype: flask.wrappers.Response
-       """
+   :param client: Client of app
+   :type client: flask.testing.FlaskClient
+   :param api_headers: Request headers
+   :type api_headers: dict
+   :return: Response for the request
+   :rtype: flask.wrappers.Response
+   """
     response = client.get('/api/v1/users/', headers=api_headers, follow_redirects=True)
     return response
 
@@ -136,7 +136,7 @@ class UsersTestCase(unittest.TestCase):
         self.assertDictEqual(expected_result, response_data)
 
     def test_get_user_invalid_data(self):
-        """Test api for get_user, correct data."""
+        """Test api for get_user."""
         user_dict = {
             'email': 'user1@example.com', 'name': 'user1_name', 'surname': 'user1_surname', 'telephone': 123,
             'password': 'password', 'role_id': 1, 'address': None
