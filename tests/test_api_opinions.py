@@ -121,7 +121,7 @@ class OpinionsTestCase(unittest.TestCase):
         self.assertDictEqual(expected_result, response_data)
 
     def test_show_opinion(self):
-        """Test api for show_opinion with pagination, sorting, filtering records, correct data."""
+        """Test api for show_opinion with filtering variables, correct data."""
         opinion_dict = {'author_id': 1, 'text': 'My opinion.', 'image': 'opinion1.jpg', 'date': datetime(2020, 5, 17)}
         opinion = Opinion(**opinion_dict)
         db.session.add(opinion)
@@ -151,6 +151,19 @@ class OpinionsTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.headers['Content-Type'], 'application/json')
         self.assertDictEqual(expected_result, response_data)
+
+    def test_show_opinion_invalid_data(self):
+        """Test api for show_opinion."""
+
+        api_headers = self.get_api_headers()
+        del api_headers["Authorization"]
+        # Test request without features
+        response = self.client.get('/api/v1/opinions/1/', headers=api_headers)
+        response_data = response.get_json()
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.headers['Content-Type'], 'application/json')
+        self.assertFalse(response_data['success'])
+        self.assertIn("1", response_data['error'])
 
     def test_add_opinion(self):
         """Test api for add_opinion, correct data."""
