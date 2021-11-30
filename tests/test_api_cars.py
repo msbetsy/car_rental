@@ -38,9 +38,13 @@ def make_car():
      """
     car_data = [
         ({"name": 123, "price": 200, "year": 2000, "model": "Car model"}, "name"),
+        ({"price": 200, "year": 2000, "model": "Car model"}, "name", "edit"),
         ({"name": "Car name", "price": "200", "year": 2000, "model": "Car model"}, "price"),
+        ({"name": "Car name", "year": 2000, "model": "Car model"}, "price", "edit"),
         ({"name": "Car name", "price": 200, "year": datetime.today().year + 1, "model": "Car model"}, "year"),
+        ({"name": "Car name", "price": 200, "model": "Car model"}, "year", "edit"),
         ({"name": "Car name", "price": 200, "year": 2000, "model": 123}, "model"),
+        ({"name": "Car name", "price": 200, "year": 2000}, "model", "edit"),
         ({"name": "Car name", "price": 200, "year": 2000, "model": "Car model", "image": "wrong.pdf"}, "image")
     ]
     return car_data
@@ -322,15 +326,16 @@ class CarsTestCase(unittest.TestCase):
 
         # Invalid data
         for car in make_car():
-            response = self.client.put('/api/v1/cars/', json={**car[0], "car_to_edit_id": 1},
-                                       headers=self.get_api_headers_moderator())
-            response_data = response.get_json()
-            self.assertEqual(response.status_code, 400)
-            self.assertFalse(response_data['success'])
-            self.assertEqual(response_data['error_value_key'], car[1])
+            if len(car) == 2:
+                response = self.client.put('/api/v1/cars/', json={**car[0], "car_to_edit_id": 1},
+                                           headers=self.get_api_headers_moderator())
+                response_data = response.get_json()
+                self.assertEqual(response.status_code, 400)
+                self.assertFalse(response_data['success'])
+                self.assertEqual(response_data['error_value_key'], car[1])
 
         # Wrong request
-        response = self.client.put('/api/v1/cars/', json={**car[0]}, headers=self.get_api_headers_moderator())
+        response = self.client.put('/api/v1/cars/', json=car_dict, headers=self.get_api_headers_moderator())
         response_data = response.get_json()
         self.assertEqual(response.status_code, 400)
         self.assertFalse(response_data['success'])
