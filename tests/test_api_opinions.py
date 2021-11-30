@@ -29,6 +29,19 @@ def change_dict_to_json(dict_name, params=None):
     return changed_dict
 
 
+def make_opinion():
+    """Function that contains possible opinion data - all cases are wrong.
+
+     :return: opinion
+     :rtype: list
+     """
+    opinion_data = [
+        ({"text": 34}, "text"),
+        ({}, "text")
+    ]
+    return opinion_data
+
+
 class OpinionsTestCase(unittest.TestCase):
     """Test opinions module."""
 
@@ -183,16 +196,16 @@ class OpinionsTestCase(unittest.TestCase):
 
     def test_add_opinion_invalid_data(self):
         """Test api for add_opinion."""
-        response = self.client.post('/api/v1/opinions/',
-                                    json={"text": 45},
-                                    headers=self.get_api_headers())
-        response_data = response.get_json()
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.headers['Content-Type'], 'application/json')
-        self.assertFalse(response_data['success'])
-        self.assertEqual(response_data['error_value_key'], 'text')
-        self.assertEqual(response_data['error']['error'], 'bad request')
-        self.assertEqual(response_data['error']['message'], 'Wrong value.')
+        for opinion in make_opinion():
+            response = self.client.post('/api/v1/opinions/',
+                                        json=opinion[0],
+                                        headers=self.get_api_headers())
+            response_data = response.get_json()
+            self.assertEqual(response.status_code, 400)
+            self.assertEqual(response.headers['Content-Type'], 'application/json')
+            self.assertFalse(response_data['success'])
+            self.assertEqual(response_data['error_value_key'], opinion[1])
+            self.assertEqual(response_data['error']['error'], 'bad request')
 
     # Testing methods connected with values of request (content-type, tokens)
     def test_invalid_content_type(self):
