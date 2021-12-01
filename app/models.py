@@ -848,12 +848,12 @@ class Comment(db.Model):
         upper_comment = json_data.get('upper_comment')
         check_if_null(upper_comment, "upper_comment")
         possible_upper_comments = [comment_id.id for comment_id in Comment.query.filter_by(post_id=post)]
-
+        possible_upper_comments.append(0)
         if not isinstance(text, str):
             raise ValidationError('Wrong value.', 'text')
-        if not isinstance(post, int) or 0 > post or post > posts_number:
+        if not isinstance(post, int) or 0 >= post or post > posts_number:
             raise ValidationError('Wrong value.', 'post')
-        if not isinstance(upper_comment, int) or upper_comment < 1 or upper_comment not in possible_upper_comments:
+        if not isinstance(upper_comment, int) or upper_comment < 0 or upper_comment not in possible_upper_comments:
             raise ValidationError('Wrong value.', 'upper_comment')
 
         return Comment(post_id=post, author_id=author, text=text, date=date, parent_comment=upper_comment)
