@@ -42,6 +42,7 @@ class TestingConfig(Config):
     """Class contains test unit tests."""
     TESTING = True
     SQLALCHEMY_DATABASE_URI = os.environ.get('TEST_DATABASE_URL') or 'sqlite://'
+    WTF_CSRF_ENABLED = False
 
 
 config = {
