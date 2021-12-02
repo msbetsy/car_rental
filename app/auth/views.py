@@ -6,7 +6,7 @@ from . import auth
 from .forms import RegisterForm, LoginForm, EditDataForm, EditMailForm, EditPasswordForm, EditUserAdminForm, \
     AddReservationAdminForm
 from .. import db
-from ..decorators import admin_required, moderator_required
+from ..decorators import admin_required
 from ..models import User, Rental, Role, Car, load_user
 
 
@@ -90,14 +90,14 @@ def show_user_data():
     return render_template("auth/data.html", current_user=current_user, form=form)
 
 
-@auth.route("/user/reservations", methods=["GET", "POST"])
+@auth.route("/user/reservations", methods=["GET"])
 @login_required
 def show_user_reservations():
     reservations = Rental.query.filter_by(users_id=current_user.id).all()
     return render_template("auth/reservations.html", current_user=current_user, reservations=reservations)
 
 
-@auth.route("/users", methods=["GET", "POST"])
+@auth.route("/users", methods=["GET"])
 @login_required
 @admin_required
 def users():
@@ -131,7 +131,7 @@ def edit_user_admin(user_id):
     return render_template("auth/edit_user_admin.html", current_user=current_user, user=user, form=form)
 
 
-@auth.route("/user/<int:user_id>/reservations", methods=["GET", "POST"])
+@auth.route("/user/<int:user_id>/reservations", methods=["GET"])
 @login_required
 @admin_required
 def show_user_reservations_admin(user_id):
