@@ -1,8 +1,10 @@
 """This module stores tests for client app.auth routes."""
 import unittest
 import re
+import random
+from datetime import datetime, timedelta
 from app import create_app, db
-from app.models import Role
+from app.models import Role, User, Rental, Car
 from tests.api_functions import create_user, create_admin, create_moderator
 
 
@@ -15,7 +17,7 @@ def check_login_required_must_login(client_with_http_method, url, check_equal, c
     :type url: str
     :param check_equal: Method that checks if the values are equal
     :type check_equal: unittest.TestCase
-    :param check_in: Method that checks if the values is not in container
+    :param check_in: Method that checks if the values is in container
     :type check_in: unittest.TestCase
     """
     response = client_with_http_method(url, follow_redirects=True)
@@ -25,7 +27,7 @@ def check_login_required_must_login(client_with_http_method, url, check_equal, c
 
 
 def check_admin_required(client_with_http_method, url, check_equal, check_in, check_not_in):
-    """Function for testing wrong token value.
+    """Function for testing admin_required decorator.
 
     :param client_with_http_method: Client of app with HTTP method
     :type client_with_http_method: flask.testing.FlaskClient
@@ -33,6 +35,8 @@ def check_admin_required(client_with_http_method, url, check_equal, check_in, ch
     :type url: str
     :param check_equal: Method that checks if the values are equal
     :type check_equal: unittest.TestCase
+    :param check_in: Method that checks if the values is in container
+    :type check_in: unittest.TestCase
     :param check_not_in: Method that checks if the values is not in container
     :type check_not_in: unittest.TestCase
     """
@@ -65,6 +69,15 @@ register_invalid_data = [
     ({"name": "name", "surname": "surname", "email": "test@test.com", "password": "password",
       "password_check": "password", "telephone": "123"}, "email_exists")
 ]
+
+
+def change_date_to_str(date):
+    """Change datetime to string format.
+    :param date: Datetime
+    :type date: datetime
+    :return: Datetime in format %Y-%m-%d %H:%M:%S
+    :rtype: str"""
+    return date.strftime("%Y-%m-%d %H:%M:%S")
 
 
 class FlaskClientAuthTestCase(unittest.TestCase):
@@ -262,3 +275,258 @@ class FlaskClientAuthTestCase(unittest.TestCase):
                     self.assertIn('Email exists.', response_data)
                 elif data_item[1] == "password":
                     self.assertIn('The passwords must be identical.', response_data)
+
+    # Tests for routes with @admin_required decorator
+
+    # Test users
+    def test_users(self):
+        """Test route for users, valid data."""
+        self.login('admin@test.com', 'password')
+        response = self.client.get(f'/auth/users', follow_redirects=True)
+        response_data = response.get_data(as_text=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('<th scope="row"> name</th>', response_data)
+        self.assertIn('<td>test@test.com</td>', response_data)
+        self.assertIn('<th scope="row"> moderator</th>', response_data)
+        self.assertIn('<td>moderator@test.com</td>', response_data)
+        self.assertIn('<th scope="row"> admin</th>', response_data)
+        self.assertIn('<td>admin@test.com</td>', response_data)
+
+    # Test show_user_reservations_admin
+    def test_show_user_reservations_admin(self):
+        """Test route for show_user_reservations_admin, valid data."""
+        user_id = User.query.filter_by(email="test@test.com").first().id
+        self.login('admin@test.com', 'password')
+        response = self.client.get(f'/auth/user/{user_id}/reservations', follow_redirects=True)
+        response_data = response.get_data(as_text=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('There are no reservations', response_data)
+        # Add reservation
+        reservation = Rental(cars_id=1, users_id=user_id, from_date=datetime(2020, 5, 27),
+                             to_date=datetime(2020, 5, 28),
+                             available_from=datetime(2020, 5, 28, 1, 0, 0))
+        db.session.add(reservation)
+        db.session.commit()
+        response = self.client.get(f'/auth/user/{user_id}/reservations', follow_redirects=True)
+        response_data = response.get_data(as_text=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn('There are no reservations', response_data)
+        self.assertIn('2020-05-27', response_data)
+        self.assertIn('2020-05-28', response_data)
+
+    def test_show_user_reservations_admin_invalid_data(self):
+        """Test route for show_user_reservations_admin."""
+        user_id = len(User.query.all()) + 1
+        self.login('admin@test.com', 'password')
+        response = self.client.get(f'/auth/user/{user_id}/reservations', follow_redirects=True)
+        response_data = response.get_data(as_text=True)
+        self.assertEqual(response.status_code, 404)
+        self.assertIn('Page Not Found', response_data)
+
+    # Test add_reservation
+    def test_add_reservation(self):
+        """Test route for add_reservation, valid data."""
+        self.login('admin@test.com', 'password')
+        user_id = User.query.filter_by(email="test@test.com").first().id
+        # Add car
+        car_dict = {"name": "Car_name", "price": 123, "year": 2000, "model": "Car model", "image": "car_image.jpg"}
+        car = Car(**car_dict)
+        db.session.add(car)
+        db.session.commit()
+
+        car_id = random.choice(Car.query.all()).id
+        from_date_time = (datetime.now() + timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S")
+        to_date_time = (datetime.now() + timedelta(hours=2)).strftime("%Y-%m-%d %H:%M:%S")
+        response = self.client.post(f'/auth/user/reservations/add/user/{user_id}',
+                                    data={"name": car_id,
+                                          "from_date_time": from_date_time,
+                                          "to_date_time": to_date_time},
+                                    follow_redirects=True)
+        response_data = response.get_data(as_text=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(Car.query.get(car_id).name, response_data)
+        self.assertIn(from_date_time, response_data)
+        self.assertIn(to_date_time, response_data)
+        self.assertIn('Reservation added.', response_data)
+
+    def test_add_reservation_invalid_data(self):
+        """Test route for add_reservation"""
+        self.login('admin@test.com', 'password')
+        # Add car
+        car_dict = {"name": "Car_name", "price": 123, "year": 2000, "model": "Car model", "image": "car_image.jpg"}
+        car = Car(**car_dict)
+        db.session.add(car)
+        db.session.commit()
+
+        user_id = User.query.filter_by(email="test@test.com").first().id
+        car_id = Car.query.filter_by(name="Car_name").first().id
+        from_date_time = datetime.now() + timedelta(days=1)
+        to_date_time = datetime.now() + timedelta(days=2)
+        available_from = to_date_time + timedelta(hours=1)
+
+        reservation_dict = {"cars_id": car_id, "users_id": user_id, "from_date": from_date_time,
+                            "to_date": to_date_time, 'available_from': available_from}
+
+        # Add reservation to db
+        rental = Rental(**reservation_dict)
+        db.session.add(rental)
+        db.session.commit()
+
+        # Test requests
+        invalid_data = [({"from_date_time": change_date_to_str(to_date_time + timedelta(days=10)),
+                          "to_date_time": change_date_to_str(to_date_time + timedelta(days=12))}, "name"),
+                        ({"name": car_id, "to_date_time": change_date_to_str(to_date_time + timedelta(days=10))},
+                         "required"),
+                        ({"name": car_id, "from_date_time": change_date_to_str(to_date_time + timedelta(days=10))},
+                         "required"),
+
+                        ({"name": car_id, "from_date_time": change_date_to_str(to_date_time + timedelta(hours=20)),
+                          "to_date_time": change_date_to_str(to_date_time + timedelta(hours=10))}, "Dates Error"),
+
+                        ({"name": car_id, "from_date_time": change_date_to_str(from_date_time - timedelta(days=365)),
+                          "to_date_time": change_date_to_str(to_date_time + timedelta(hours=10))}, "Datetime error."),
+
+                        ({"name": car_id, "from_date_time": change_date_to_str(to_date_time - timedelta(hours=10)),
+                          "to_date_time": change_date_to_str(to_date_time + timedelta(days=10))}, "Change dates",
+                         "to_date"),
+                        ({"name": car_id, "from_date_time": change_date_to_str(from_date_time - timedelta(hours=10)),
+                          "to_date_time": change_date_to_str(from_date_time + timedelta(hours=10))}, "Change dates",
+                         "from_date"),
+
+                        ({"name": car_id, "from_date_time": change_date_to_str(from_date_time - timedelta(hours=10)),
+                          "to_date_time": change_date_to_str(available_from + timedelta(minutes=10))}, "Change dates",
+                         "dates")
+                        ]
+        for item in invalid_data:
+            response = self.client.post(f'/auth/user/reservations/add/user/{user_id}',
+                                        data=item[0],
+                                        follow_redirects=True)
+            response_data = response.get_data(as_text=True)
+            self.assertEqual(response.status_code, 200)
+            if item[1] == "name":
+                self.assertIn('Not a valid choice', response_data)
+            elif item[1] == "required":
+                self.assertIn('This field is required.', response_data)
+            elif item[1] == "Dates Error":
+                self.assertIn('Dates Error!', response_data)
+            elif item[1] == "Datetime error.":
+                self.assertIn(item[1], response_data)
+            elif item[1] == "Change dates":
+                self.assertIn("Change dates!", response_data)
+                self.assertIn(
+                    f'Available before: {(from_date_time - timedelta(minutes=61)).strftime("%Y-%m-%d %H:%M:%S")}',
+                    response_data)
+                self.assertIn(
+                    f'Available after: {(available_from + timedelta(minutes=1)).strftime("%Y-%m-%d %H:%M:%S")}',
+                    response_data)
+
+    # Test delete_user_reservation
+    def test_delete_user_reservation(self):
+        """Test route for delete_user_reservation, valid data."""
+        self.login('admin@test.com', 'password')
+        # Add car
+        car_dict = {"name": "Car_name", "price": 123, "year": 2000, "model": "Car model", "image": "car_image.jpg"}
+        car = Car(**car_dict)
+        db.session.add(car)
+        db.session.commit()
+
+        user_id = User.query.filter_by(email="test@test.com").first().id
+        car_id = Car.query.filter_by(name="Car_name").first().id
+        from_date_time = datetime.now() + timedelta(days=1)
+        to_date_time = datetime.now() + timedelta(days=2)
+        available_from = to_date_time + timedelta(hours=1)
+
+        reservation_dict = {"cars_id": car_id, "users_id": user_id, "from_date": from_date_time,
+                            "to_date": to_date_time, 'available_from': available_from}
+
+        # Add reservation to db
+        rental = Rental(**reservation_dict)
+        db.session.add(rental)
+        db.session.commit()
+
+        # Test request
+        response = self.client.post('/auth/user/reservations/delete',
+                                    data={"car_id": car_id, "user_id": user_id, "from_date": from_date_time},
+                                    follow_redirects=True)
+        response_data = response.get_data(as_text=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Deleted", response_data)
+        self.assertIn("There are no reservations", response_data)
+
+    # Test edit_user_admin
+    def test_edit_user_admin(self):
+        """Test route for edit_user_admin, valid data."""
+        user_id = User.query.filter_by(email="test@test.com").first().id
+        self.login('admin@test.com', 'password')
+        response = self.client.post(f'/auth/edit-user/{user_id}',
+                                    data=dict(name="New name", surname='New surname', email='new_test@test.com',
+                                              telephone="111", role=2),
+                                    follow_redirects=True)
+        response_data = response.get_data(as_text=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('The profile has been updated.', response_data)
+
+        response = self.client.get(f'/auth/edit-user/{user_id}', follow_redirects=True)
+        response_data = response.get_data(as_text=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('required type="text" value="New name"', response_data)
+        self.assertIn('required type="text" value="New surname"', response_data)
+        self.assertIn('required type="text" value="new_test@test.com"', response_data)
+        self.assertIn('<option selected value="2">Moderator', response_data)
+        self.assertIn('required type="text" value="111"', response_data)
+        self.assertIn('id="address" name="address" type="text" value=""', response_data)
+
+    def test_edit_user_admin_invalid_data(self):
+        """Test route for edit_user_admin."""
+        user_id = len(User.query.all()) + 1
+        self.login('admin@test.com', 'password')
+        response = self.client.post(f'/auth/edit-user/{user_id}',
+                                    data=dict(name="New name", surname='New surname', email='new_test@test.com',
+                                              telephone="111", role=2),
+                                    follow_redirects=True)
+        response_data = response.get_data(as_text=True)
+        self.assertEqual(response.status_code, 404)
+        self.assertIn('Page Not Found', response_data)
+
+        # Invalid role id
+        role_id = len(Role.query.all()) + 1
+        user_id = User.query.filter_by(email="test@test.com").first().id
+        response = self.client.post(f'/auth/edit-user/{user_id}',
+                                    data={**register_invalid_data[0][0], "name": "name", "role": role_id},
+                                    follow_redirects=True
+                                    )
+        response_data = response.get_data(as_text=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('Not a valid choice', response_data)
+
+        # Invalid data
+        user_id = User.query.filter_by(email="test@test.com").first().id
+        for data_item in register_invalid_data:
+            if data_item[1] != "password":
+                response = self.client.post(f'/auth/edit-user/{user_id}',
+                                            data={**data_item[0], "role": 1},
+                                            follow_redirects=True
+                                            )
+                response_data = response.get_data(as_text=True)
+                self.assertEqual(response.status_code, 200)
+                if len(data_item[0]) <= 5:
+                    self.assertTrue(
+                        re.search(f'id="{data_item[1]}" name="{data_item[1]}" required type="text"',
+                                  response_data))
+                    self.assertIn('This field is required.', response_data)
+                else:
+                    if data_item[1] == "email_invalid":
+                        self.assertIn('Invalid email address.', response_data)
+                    elif data_item[1] == "email_too_long":
+                        self.assertIn('Invalid email address.', response_data)
+                        self.assertIn('Field must be between 1 and 80 characters long.', response_data)
+
+            if data_item[1] == "email_exists":
+                data_item[0]["email"] = "admin@test.com"
+                response = self.client.post(f'/auth/edit-user/{user_id}',
+                                            data={**data_item[0], "role": 1},
+                                            follow_redirects=True
+                                            )
+                response_data = response.get_data(as_text=True)
+                self.assertEqual(response.status_code, 200)
+                self.assertIn('Email exists.', response_data)
