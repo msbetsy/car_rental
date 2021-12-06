@@ -135,6 +135,7 @@ def edit_user_admin(user_id):
 @login_required
 @admin_required
 def show_user_reservations_admin(user_id):
+    User.query.get_or_404(user_id)
     reservations = Rental.query.filter_by(users_id=user_id).all()
     return render_template("auth/edit_reservations_admin.html", current_user=current_user, reservations=reservations)
 
@@ -167,10 +168,11 @@ def add_reservation(user_id):
                     if reservation.from_date <= rental_from <= reservation.available_from or \
                             reservation.from_date <= rental_to <= reservation.available_from:
                         flash("Change dates!")
-                        flash(
-                            " ".join(("Available before: ", str(reservation.from_date + timedelta(minutes=-61))[:-3])))
-                        flash(" ".join(
-                            ("Available after: ", str(reservation.available_from + timedelta(minutes=1))[:-3])))
+                        flash(" ".join(("Available before:", (reservation.from_date + timedelta(minutes=-61)).strftime(
+                            "%Y-%m-%d %H:%M:%S"))))
+                        flash(" ".join(("Available after:",
+                                        (reservation.available_from + timedelta(minutes=1)).strftime(
+                                            "%Y-%m-%d %H:%M:%S"))))
                         break
                     else:
                         available_date = True
@@ -179,9 +181,11 @@ def add_reservation(user_id):
                             reservation.from_date < reservation.available_from < rental_to:
                         available_date = False
                         flash("Change dates!")
-                        flash(" ".join(("Available before:", str(reservation.from_date + timedelta(minutes=-61))[:-3])))
-                        flash(" ".join(
-                            ("Available after: ", str(reservation.available_from + timedelta(minutes=1))[:-3])))
+                        flash(" ".join(("Available before:", (reservation.from_date + timedelta(minutes=-61)).strftime(
+                            "%Y-%m-%d %H:%M:%S"))))
+                        flash(" ".join(("Available after:",
+                                        (reservation.available_from + timedelta(minutes=1)).strftime(
+                                            "%Y-%m-%d %H:%M:%S"))))
                         break
 
                     if available_date:
