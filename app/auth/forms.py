@@ -1,4 +1,5 @@
 """This module stores application forms for authorization."""
+from datetime import datetime
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, BooleanField, SelectField, DateTimeField
 from wtforms.validators import DataRequired, Length, Email, EqualTo
@@ -118,3 +119,13 @@ class AddReservationAdminForm(FlaskForm):
     def __init__(self, *args, **kwargs):
         super(AddReservationAdminForm, self).__init__(*args, **kwargs)
         self.name.choices = [(car.id, car.name) for car in Car.query.order_by(Car.name).all()]
+
+    def validate_from_date_time(self, field):
+        """Custom validator - date is later then now.
+
+        :param field: The name of the field which will be validated.
+        :type: wtforms.fields.core.StringField
+        :raises ValidationError: Datetime error.
+        """
+        if field.data <= datetime.now():
+            raise ValidationError('Datetime error.')
