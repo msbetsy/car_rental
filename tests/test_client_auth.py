@@ -530,3 +530,109 @@ class FlaskClientAuthTestCase(unittest.TestCase):
                 response_data = response.get_data(as_text=True)
                 self.assertEqual(response.status_code, 200)
                 self.assertIn('Email exists.', response_data)
+
+    # Tests for functions without @admin_required
+
+    # Test show_user
+    def test_show_user(self):
+        """Test route for show_user."""
+        self.login('test@test.com', 'password')
+        user = User.query.filter_by(email='test@test.com').first()
+
+        # Test GET
+        response = self.client.get('/auth/user', follow_redirects=True)
+        response_data = response.get_data(as_text=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(f'Hello {user.name}!', response_data)
+        self.assertIn(user.email, response_data)
+        self.assertIn("********", response_data)
+
+        # Test POST
+        user_data = [{"new_email": "test2@test.com", "password": "password", "submit_new_mail": "Save changes"},
+                     {"old_password": "password", "new_password": "password2", "new_password_check": "password2",
+                      "submit_new_password": "Save changes"}
+                     ]
+        for item in user_data:
+            response = self.client.post('/auth/user', data={**item}, follow_redirects=True)
+            response_data = response.get_data(as_text=True)
+            self.assertEqual(response.status_code, 200)
+            self.assertIn("Changes saved.", response_data)
+            self.assertIn("test2@test.com", response_data)
+
+        response = self.client.get('/auth/logout', follow_redirects=True)
+        response_data = response.get_data(as_text=True)
+        self.assertNotIn("My account", response_data)
+        response = self.login("test2@test.com", "password2")
+        response_data = response.get_data(as_text=True)
+        self.assertIn("My account", response_data)
+
+    def test_show_user_invalid_data(self):
+        """Test route for show_user, invalid data."""
+        invalid_data = [
+            ({"new_email": "test@test.com", "password": "password", "submit_new_mail": "Save changes"}, "email"),
+            ({"new_email": "test@test.com", "password": "password2", "submit_new_mail": "Save changes"}, "password"),
+            ({"old_password": "password2", "new_password": "password2", "new_password_check": "password2",
+              "submit_new_password": "Save changes"}, "password")]
+        self.login('test@test.com', 'password')
+        for item in invalid_data:
+            response = self.client.post('/auth/user', data={**item[0]}, follow_redirects=True)
+            response_data = response.get_data(as_text=True)
+            if item[1] == "email":
+                self.assertIn("Email already exists.", response_data)
+            else:
+                self.assertIn("Wrong password", response_data)
+            self.assertEqual(response.status_code, 200)
+
+    # Test show_user_reservations
+    def test_show_user_reservations(self):
+        """Test route for show_user_reservations."""
+        self.login('test@test.com', 'password')
+        response = self.client.get('/auth/user/reservations')
+        response_data = response.get_data(as_text=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("There are no reservations", response_data)
+
+        # Add reservation
+        user_id = User.query.filter_by(email="test@test.com").first().id
+        from_date_time = datetime.now() + timedelta(days=1)
+        to_date_time = datetime.now() + timedelta(days=2)
+        available_from = to_date_time + timedelta(hours=1)
+        reservation_dict = {"cars_id": 3, "users_id": user_id, "from_date": from_date_time, "to_date": to_date_time,
+                            'available_from': available_from}
+        rental = Rental(**reservation_dict)
+        db.session.add(rental)
+        db.session.commit()
+
+        response = self.client.get('/auth/user/reservations')
+        response_data = response.get_data(as_text=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(change_date_to_str(from_date_time), response_data)
+        self.assertIn(change_date_to_str(to_date_time), response_data)
+
+    # Test show_user_data
+    def test_show_user_data(self):
+        """Test route for show_user_data."""
+        self.login('test@test.com', 'password')
+        new_data = {"name": "name_new", "surname": "surname_new", "telephone": "321111", "address": "my_address"}
+        response = self.client.post('/auth/user/data', data={**new_data}, follow_redirects=True)
+        response_data = response.get_data(as_text=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Changes saved.", response_data)
+        self.assertIn("name_new", response_data)
+        self.assertIn("surname_new", response_data)
+        self.assertIn("321111", response_data)
+        self.assertIn("my_address", response_data)
+
+    def test_show_user_data_invalid_data(self):
+        """Test route for show_user_data, invalid data."""
+        invalid_data = [
+            {"name": "", "surname": "new_surname", "telephone": "1000000", "address": "my address"},
+            {"name": "new_name", "surname": "", "telephone": "1000000", "address": "my address"},
+            {"name": "new_name", "surname": "new_surname", "telephone": "", "address": "my address"}
+        ]
+        self.login('test@test.com', 'password')
+        for item in invalid_data:
+            response = self.client.post('/auth/user/data', data={**item}, follow_redirects=True)
+            response_data = response.get_data(as_text=True)
+            self.assertEqual(response.status_code, 200)
+            self.assertIn("This field is required.", response_data)
