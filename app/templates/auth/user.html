@@ -41,7 +41,9 @@
                 </button>
             </div>
             <form id="editEmail" action="" method="POST">
-                {{ form_mail.csrf_token() }}
+                {% if 'csrf_token' in form_mail %}
+                {{ form_mail.csrf_token }}
+                {% endif %}
                 <div class="modal-body">
                     <div class="form-group">
                         <label for="user_email" class="col-form-label">New e-mail:</label>
@@ -82,7 +84,9 @@
                 </button>
             </div>
             <form id="editPassword" action="" method="POST">
-                {{ form_password.csrf_token() }}
+                {% if 'csrf_token' in form_password %}
+                {{ form_password.csrf_token }}
+                {% endif %}
                 <div class="modal-body">
                     <div class="form-group">
                         <label for="user_old_password" class="col-form-label">Your password:</label>
@@ -99,7 +103,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                        {{ form_password.submit_new_password(class_="btn btn-info") }}
+                    {{ form_password.submit_new_password(class_="btn btn-info") }}
                 </div>
             </form>
         </div>
