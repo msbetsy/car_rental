@@ -57,16 +57,6 @@ class EditMailForm(FlaskForm):
     password = PasswordField("", validators=[DataRequired()])
     submit_new_mail = SubmitField("Save changes")
 
-    def validate_new_email(self, field):
-        """Custom validator - non-duplicating email.
-
-        :param field: The name of the field which will be validated.
-        :type: wtforms.fields.core.StringField
-        :raises ValidationError: Email duplicated.
-        """
-        if User.query.filter_by(email=field.data.lower()).first():
-            raise ValidationError('Email exists.')
-
 
 class EditPasswordForm(FlaskForm):
     """Class used for edit user password.
