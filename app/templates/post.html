@@ -41,14 +41,16 @@
                 {% if item.child %}
                 <ul class="comment-list">{{ loop(item.child) }}</ul>
                 {% else %}
-
                 <div class="reply">
-                    <button id="replybutton" onclick="replybutton(this)" type="button" class="btn btn-secondary btn-sm">
+
+                    <button id="replybutton" onclick="replybutton()" type="button" class="btn btn-secondary btn-sm">
                         Reply
                     </button>
                     <div id="replyform" style="display:none">
                         <form action="" method="POST">
-                            {{ form_comment.csrf_token() }}
+                            {% if 'csrf_token' in form_comment %}
+                            {{ form_comment.csrf_token }}
+                            {% endif %}
                             {{ form_comment.text }}
                             {{ form_comment.parentID(value=item.id) }}
                             <a href=" {{ url_for('main.show_post', post_id=post.id) }}">
@@ -56,8 +58,26 @@
                                 </button>
                             </a>
                         </form>
+                        <span class="error">
+                                {% if form_comment.text.errors %}
+                                    {% for error in form_comment.text.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                {% endif %}
+                                {% if form_comment.parentID.errors %}
+                                        {% for error in form_comment.parentID.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    {% endif %}
+                        </span>
                     </div>
                 </div>
+                <script>
+                function replybutton() {
+                document.getElementById("replyform").style.display = "block";
+                document.getElementById("replybutton").style.display = "none";
+                };
+                </script>
             </div>
             {% endif %}
         </li>
