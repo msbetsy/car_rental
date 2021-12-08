@@ -210,3 +210,43 @@ def request_with_features(url=None, sort_by=None, params=None, page="1", per_pag
     else:
         changed_url = url
     return changed_url
+
+
+def check_login_required_must_login(client_with_http_method, url, check_equal, check_in):
+    """Function for testing login_required decorator.
+
+    :param client_with_http_method: Client of app with HTTP method
+    :type client_with_http_method: flask.testing.FlaskClient
+    :param url: The route
+    :type url: str
+    :param check_equal: Method that checks if the values are equal
+    :type check_equal: unittest.TestCase
+    :param check_in: Method that checks if the values is in container
+    :type check_in: unittest.TestCase
+    """
+    response = client_with_http_method(url, follow_redirects=True)
+    response_data = response.get_data(as_text=True)
+    check_equal(response.status_code, 200)
+    check_in('Please log in to access this page.', response_data)
+
+
+def check_admin_or_moderator_required(client_with_http_method, url, check_equal, check_in, check_not_in):
+    """Function for testing admin_required or moderator_required decorators.
+
+    :param client_with_http_method: Client of app with HTTP method
+    :type client_with_http_method: flask.testing.FlaskClient
+    :param url: The route
+    :type url: str
+    :param check_equal: Method that checks if the values are equal
+    :type check_equal: unittest.TestCase
+    :param check_in: Method that checks if the values is in container
+    :type check_in: unittest.TestCase
+    :param check_not_in: Method that checks if the values is not in container
+    :type check_not_in: unittest.TestCase
+    """
+    response = client_with_http_method(url, follow_redirects=True)
+    check_equal(response.status_code, 403)
+    response_data = response.get_data(as_text=True)
+    check_in("Forbidden", response_data)
+    check_not_in("Name", response_data)
+    check_not_in("Email", response_data)

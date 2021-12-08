@@ -5,48 +5,8 @@ import random
 from datetime import datetime, timedelta
 from app import create_app, db
 from app.models import Role, User, Rental, Car
-from tests.api_functions import create_user, create_admin, create_moderator
-
-
-def check_login_required_must_login(client_with_http_method, url, check_equal, check_in):
-    """Function for testing wrong token value.
-
-    :param client_with_http_method: Client of app with HTTP method
-    :type client_with_http_method: flask.testing.FlaskClient
-    :param url: The route
-    :type url: str
-    :param check_equal: Method that checks if the values are equal
-    :type check_equal: unittest.TestCase
-    :param check_in: Method that checks if the values is in container
-    :type check_in: unittest.TestCase
-    """
-    response = client_with_http_method(url, follow_redirects=True)
-    response_data = response.get_data(as_text=True)
-    check_equal(response.status_code, 200)
-    check_in('Please log in to access this page.', response_data)
-
-
-def check_admin_required(client_with_http_method, url, check_equal, check_in, check_not_in):
-    """Function for testing admin_required decorator.
-
-    :param client_with_http_method: Client of app with HTTP method
-    :type client_with_http_method: flask.testing.FlaskClient
-    :param url: The route
-    :type url: str
-    :param check_equal: Method that checks if the values are equal
-    :type check_equal: unittest.TestCase
-    :param check_in: Method that checks if the values is in container
-    :type check_in: unittest.TestCase
-    :param check_not_in: Method that checks if the values is not in container
-    :type check_not_in: unittest.TestCase
-    """
-    response = client_with_http_method(url, follow_redirects=True)
-    check_equal(response.status_code, 403)
-    response_data = response.get_data(as_text=True)
-    check_in("Forbidden", response_data)
-    check_not_in("Name", response_data)
-    check_not_in("Email", response_data)
-
+from tests.api_functions import create_user, create_admin, create_moderator, check_login_required_must_login, \
+    check_admin_or_moderator_required
 
 register_invalid_data = [
     ({"surname": "surname", "email": "mail@mail.com", "password": "password", "password_check": "password",
@@ -142,21 +102,22 @@ class FlaskClientAuthTestCase(unittest.TestCase):
         """Test all routes with admin_required decorator."""
         user_id = 1
         responses = [self.login('test@test.com', 'password'), self.login('moderator@test.com', 'password')]
-        for response in responses:
+        for _ in responses:
             # Test users function from app.auth.views
-            check_admin_required(self.client.get, '/auth/users', self.assertEqual, self.assertIn, self.assertNotIn)
+            check_admin_or_moderator_required(self.client.get, '/auth/users', self.assertEqual, self.assertIn,
+                                              self.assertNotIn)
             # Test edit_user_admin function from app.auth.views
-            check_admin_required(self.client.get, f'/auth/edit-user/{user_id}', self.assertEqual, self.assertIn,
-                                 self.assertNotIn)
+            check_admin_or_moderator_required(self.client.get, f'/auth/edit-user/{user_id}', self.assertEqual,
+                                              self.assertIn, self.assertNotIn)
             # Test show_user_reservations_admin function from app.auth.views
-            check_admin_required(self.client.get, f'/auth/user/{user_id}/reservations', self.assertEqual, self.assertIn,
-                                 self.assertNotIn)
+            check_admin_or_moderator_required(self.client.get, f'/auth/user/{user_id}/reservations', self.assertEqual,
+                                              self.assertIn, self.assertNotIn)
             # Test add_reservation function from app.auth.views
-            check_admin_required(self.client.get, f'/auth/user/reservations/add/user/{user_id}', self.assertEqual,
-                                 self.assertIn, self.assertNotIn)
+            check_admin_or_moderator_required(self.client.get, f'/auth/user/reservations/add/user/{user_id}',
+                                              self.assertEqual, self.assertIn, self.assertNotIn)
             # Test delete_user_reservation function from app.auth.views
-            check_admin_required(self.client.get, '/auth/user/reservations/delete', self.assertEqual, self.assertIn,
-                                 self.assertNotIn)
+            check_admin_or_moderator_required(self.client.get, '/auth/user/reservations/delete', self.assertEqual,
+                                              self.assertIn, self.assertNotIn)
 
     # Check pages @login_required decorator
     def test_login_required_decorator(self):
