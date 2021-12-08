@@ -27,7 +27,7 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-@main.route('/', methods=['GET', 'POST'])
+@main.route('/', methods=['GET'])
 def index():
     return render_template("index.html", current_user=current_user)
 
@@ -44,7 +44,7 @@ def contact():
     return render_template("contact.html", form=form, current_user=current_user)
 
 
-@main.route("/cars")
+@main.route("/cars", methods=['GET'])
 def show_models():
     car_models = Car.query.all()
     number_of_car_models = len(car_models)
@@ -59,11 +59,11 @@ def add_model():
     form = CarForm()
     if form.validate_on_submit():
         file = form.image.data
-        is_file = os.path.isfile(os.path.join(basedir, 'static\img\\', file.filename))
+        is_file = os.path.isfile(os.path.join(basedir, 'static\\img\\', file.filename))
         filename = secure_filename(file.filename)
 
         if not is_file and allowed_file(file.filename):
-            file.save(os.path.join(basedir, 'static\img\\', filename))
+            file.save(os.path.join(basedir, 'static\\img\\', filename))
         new_car = Car(
             name=form.name.data,
             price=form.price.data,
@@ -80,7 +80,7 @@ def add_model():
 
 @main.route("/cars/<string:car_name>", methods=["GET", "POST"])
 def show_car(car_name):
-    car_to_show = Car.query.filter_by(name=car_name).first()
+    car_to_show = Car.query.filter_by(name=car_name).first_or_404()
     rental_list = car_to_show.car_rental
     form = CalendarForm()
     if form.validate_on_submit():
@@ -93,11 +93,16 @@ def show_car(car_name):
         if len(rental_list) != 0:
             for element in rental_list:
                 available_date = False
+                if from_datetime <= datetime.now():
+                    flash("Change dates to future dates!")
+                    break
                 if element.from_date <= from_datetime <= element.available_from or \
                         element.from_date <= to_datetime + timedelta(hours=1) <= element.available_from:
                     flash("Change dates!")
-                    flash(" ".join(("Available before: ", str(element.from_date + timedelta(minutes=-61))[:-3])))
-                    flash(" ".join(("Available after: ", str(element.available_from + timedelta(minutes=1))[:-3])))
+                    flash(" ".join(("Available before:",
+                                    (element.from_date + timedelta(minutes=-61)).strftime("%Y-%m-%d %H:%M"))))
+                    flash(" ".join(("Available after:",
+                                    (element.available_from + timedelta(minutes=1)).strftime("%Y-%m-%d %H:%M"))))
                     break
                 else:
                     available_date = True
@@ -106,8 +111,10 @@ def show_car(car_name):
                         element.from_date < element.available_from < to_datetime + timedelta(hours=1):
                     available_date = False
                     flash("Change dates!")
-                    flash(" ".join(("Available before:", str(element.from_date + timedelta(minutes=-61))[:-3])))
-                    flash(" ".join(("Available after: ", str(element.available_from + timedelta(minutes=1))[:-3])))
+                    flash(" ".join(
+                        ("Available before:", (element.from_date + timedelta(minutes=-61)).strftime("%Y-%m-%d %H:%M"))))
+                    flash(" ".join(("Available after:",
+                                    (element.available_from + timedelta(minutes=1)).strftime("%Y-%m-%d %H:%M"))))
                     break
 
                 if available_date:
@@ -169,10 +176,10 @@ def change_car_photo(car_name):
     if form.validate_on_submit():
 
         file = form.image.data
-        is_file = os.path.isfile(os.path.join(basedir, 'static\img\\', file.filename))
+        is_file = os.path.isfile(os.path.join(basedir, 'static\\img\\', file.filename))
         filename = secure_filename(file.filename)
         if not is_file and allowed_file(file.filename):
-            file.save(os.path.join(basedir, 'static\img\\', filename))
+            file.save(os.path.join(basedir, 'static\\img\\', filename))
         car_to_show.image = filename
 
         db.session.add(car_to_show)
@@ -210,20 +217,22 @@ def add_opinion():
                            all_pictures=pictures, opinions_number=number_of_opinions)
 
 
-@main.route("/news")
+@main.route("/news", methods=['GET'])
 def show_news():
     page = request.args.get('page', 1, type=int)
     pagination = NewsPost.query.order_by(NewsPost.date.desc()).paginate(page,
                                                                         per_page=current_app.config['POSTS_PER_PAGE'],
                                                                         error_out=False)
     posts = pagination.items
+    if len(posts) == 0:
+        pagination = None
     return render_template("news.html", current_user=current_user, all_posts=posts, pagination=pagination)
 
 
 @main.route("/news/<int:post_id>", methods=["GET", "POST"])
 def show_post(post_id):
     post_to_show = NewsPost.query.get_or_404(post_id)
-    is_file = os.path.isfile(os.path.join(basedir, 'static\img\\', post_to_show.img_url))
+    is_file = os.path.isfile(os.path.join(basedir, 'static\\img\\', post_to_show.img_url))
     if not is_file:
         post_to_show.img_url = "no_img.jpg"
     comments_for_post = Comment.query.filter_by(post_id=post_id).order_by(Comment.date).all()
@@ -326,10 +335,10 @@ def add_new_post():
     form = NewsPostForm()
     if form.validate_on_submit():
         file = form.img_url.data
-        is_file = os.path.isfile(os.path.join(basedir, 'static\img\\', file.filename))
+        is_file = os.path.isfile(os.path.join(basedir, 'static\\img\\', file.filename))
         filename = secure_filename(file.filename)
         if not is_file and allowed_file(file.filename):
-            file.save(os.path.join(basedir, 'static\img\\', filename))
+            file.save(os.path.join(basedir, 'static\\img\\', filename))
 
         new_post = NewsPost(
             title=form.title.data,
