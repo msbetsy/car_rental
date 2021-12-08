@@ -35,7 +35,9 @@
                 {% endif %}
                 {% if current_user.is_authenticated %}
                 <form action="" method="POST">
-                    {{ form.csrf_token() }}
+                    {% if 'csrf_token' in form %}
+                    {{ form.csrf_token }}
+                    {% endif %}
                     <div class="row">
                         <div class="form-group col-md-12 control-label">
                             Choose date and time:
@@ -43,28 +45,42 @@
                         <div class="form-group col-md-6">
                             Start date: {{ form.start_date( class='datepicker') }}
                             <span class="error">
-              {% if form.start_date.errors %}
-                {% for error in form.start_date.errors %}
-                  {{ error }}
-                {% endfor %}
-              {% endif %}
-            </span>
+                                {% if form.start_date.errors %}
+                                    {% for error in form.start_date.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                {% endif %}
+                            </span>
                         </div>
                         <div class="form-group col-md-6">
                             Start time: {{ form.start_time(class='timepicker') }}
                             <span class="error">
-              {% if form.start_time.errors %}
-                {% for error in form.start_time.errors %}
-                  {{ error }}
-                {% endfor %}
-              {% endif %}
-            </span>
+                                {% if form.start_time.errors %}
+                                    {% for error in form.start_time.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                {% endif %}
+                            </span>
                         </div>
                         <div class="form-group col-md-6">
                             End date: {{ form.end_date(class='datepicker') }}
+                            <span class="error">
+                                {% if form.end_date.errors %}
+                                    {% for error in form.end_date.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                {% endif %}
+                            </span>
                         </div>
                         <div class="form-group col-md-6">
                             End time: {{ form.end_time(class='dtimepicker') }}
+                            <span class="error">
+                                {% if form.end_time.errors %}
+                                    {% for error in form.end_time.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                {% endif %}
+                            </span>
                         </div>
                     </div>
                     <button type="submit" class="btn btn-secondary">Submit</button>
