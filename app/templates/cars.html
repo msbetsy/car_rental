@@ -25,7 +25,7 @@ Car models
         <div class="row">
 
             <!-- Show Cars -->
-            {% if car_number!= 0: %}
+            {% if car_number!= 0 %}
             {% for car in all_cars %}
             <div class="car-column col-lg-4 col-md-6">
                 <div class="card mx-auto whole-card">
@@ -37,6 +37,8 @@ Car models
                 </div>
             </div>
             {% endfor %}
+            {% else %}
+            There are no cars in our offer
             {% endif %}
         </div>
 

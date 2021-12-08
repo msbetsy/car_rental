@@ -20,19 +20,23 @@ News
 </div>
 {% endif %}
 <!-- Show Posts -->
-{% for post in all_posts %}
-<div class="post-preview">
-    <a href="{{url_for('main.show_post',post_id=post.id)}}">
-        <h2 class="post-title">
-            {{post.title}}
-        </h2>
-    </a>
-    <p class="post-body">Posted by
-        {{post.author.name}}
-        on {{post.date}}
-    </p>
-</div>
-{% endfor %}
+{% if all_posts|length  > 0 %}
+    {% for post in all_posts %}
+    <div class="post-preview">
+        <a href="{{url_for('main.show_post',post_id=post.id)}}">
+            <h2 class="post-title">
+                {{post.title}}
+            </h2>
+        </a>
+        <p class="post-body">Posted by
+            {{post.author.name}}
+            on {{post.date}}
+        </p>
+    </div>
+    {% endfor %}
+{% else %}
+    There is no news.
+{% endif %}
 
 {% if pagination %}
 <div class="pagination">

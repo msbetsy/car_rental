@@ -35,7 +35,7 @@ class LoginForm(FlaskForm):
     """Class used for log in user.
     """
     email = StringField("Email: ", validators=[DataRequired(), Length(1, 80), Email()])
-    password = PasswordField("Password", validators=[DataRequired()])
+    password = PasswordField("Password:", validators=[DataRequired()])
     remember_user = BooleanField('Remember me')
     submit = SubmitField("Log in")
 

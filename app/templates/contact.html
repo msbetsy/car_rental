@@ -13,7 +13,7 @@
 
 {% block main_text %}
     {% if success %}
-        <p class="mail-send">Thank's for your e-mail.</p>
+        <p class="mail-send">Thanks for sending e-mail.</p>
     {% else: %}
         {{ wtf.quick_form(form, novalidate=True, button_map={"submit": "secondary"}) }}
     {% endif %}
