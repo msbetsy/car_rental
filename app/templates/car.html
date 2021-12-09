@@ -17,8 +17,8 @@
     {% if current_user.can(Permission.WRITE) %}
     <div class="clearfix">
         <a class="btn btn-secondary float-left" href="{{url_for('main.edit_car', car_name=car.name)}}">Edit data</a>
-        <a class="btn btn-secondary float-left" href="{{url_for('main.change_car_photo', car_name=car.name)}}">Change
-            photo</a>
+        <a class="btn btn-secondary float-left" href="{{url_for('main.change_car_photo', car_name=car.name)}}">
+            Change photo</a>
     </div>
 
     {% endif %}
