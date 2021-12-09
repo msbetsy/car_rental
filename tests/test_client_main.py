@@ -1,10 +1,13 @@
 """This module stores tests for client app.main routes."""
 import unittest
 import re
+import random
 from datetime import datetime, timedelta
+from werkzeug.datastructures import FileStorage
 from app import create_app, db
 from app.models import Role, Car, Rental, User, NewsPost
-from tests.api_functions import create_user, create_moderator
+from tests.api_functions import create_user, create_moderator, check_login_required_must_login, \
+    check_admin_or_moderator_required
 
 car_valid_data = [{"name": "first", "price": 100, "year": 2001, "model": "first one", "image": "first.jpg"},
                   {"name": "second", "price": 200, "year": 2002, "model": "second one", "image": "second.jpg"},
@@ -441,3 +444,226 @@ class FlaskClientMainTestCase(unittest.TestCase):
             self.assertEqual(response.status_code, 200)
             self.assertIn("This field is required.", response_data)
             self.assertNotIn("Thank you for comment.", response_data)
+
+    # Check pages @login_required decorator
+    def test_login_required_decorator(self):
+        """Test all routes with login_required decorator."""
+        # Add cars to db
+        self.add_cars_to_db()
+        car = random.choice(Car.query.all())
+
+        # Test add_model function
+        check_login_required_must_login(self.client.get, '/cars/add', self.assertEqual, self.assertIn)
+        check_login_required_must_login(self.client.post, '/cars/add', self.assertEqual, self.assertIn)
+
+        # Test edit_car function
+        check_login_required_must_login(self.client.get, f'/cars/{car.name}>/edit', self.assertEqual, self.assertIn)
+        check_login_required_must_login(self.client.post, f'/cars/{car.name}>/edit', self.assertEqual, self.assertIn)
+
+        # Test change_car_photo function
+        check_login_required_must_login(self.client.get, f'/cars/{car.name}/change_photo', self.assertEqual,
+                                        self.assertIn)
+        check_login_required_must_login(self.client.post, f'/cars/{car.name}/change_photo', self.assertEqual,
+                                        self.assertIn)
+        # Test add_new_post function
+        check_login_required_must_login(self.client.get, '/new-post', self.assertEqual, self.assertIn)
+        check_login_required_must_login(self.client.post, '/new-post', self.assertEqual, self.assertIn)
+
+    # Check pages @moderator_required decorator
+    def test_moderator_required_decorator(self):
+        """Test all routes with moderator_required decorator."""
+        # Add cars to db
+        self.add_cars_to_db()
+        car = random.choice(Car.query.all())
+        # Log in as normal user
+        self.login('test@test.com', 'password')
+
+        # Test add_model function
+        check_admin_or_moderator_required(self.client.get, '/cars/add', self.assertEqual, self.assertIn,
+                                          self.assertNotIn)
+        check_admin_or_moderator_required(self.client.post, '/cars/add', self.assertEqual, self.assertIn,
+                                          self.assertNotIn)
+
+        # Test edit_car function
+        check_admin_or_moderator_required(self.client.get, f'/cars/{car.name}>/edit', self.assertEqual, self.assertIn,
+                                          self.assertNotIn)
+        check_admin_or_moderator_required(self.client.post, f'/cars/{car.name}>/edit', self.assertEqual, self.assertIn,
+                                          self.assertNotIn)
+
+        # Test change_car_photo function
+        check_admin_or_moderator_required(self.client.get, f'/cars/{car.name}/change_photo', self.assertEqual,
+                                          self.assertIn, self.assertNotIn)
+        check_admin_or_moderator_required(self.client.post, f'/cars/{car.name}/change_photo', self.assertEqual,
+                                          self.assertIn, self.assertNotIn)
+        # Test add_new_post function
+        check_admin_or_moderator_required(self.client.get, '/new-post', self.assertEqual, self.assertIn,
+                                          self.assertNotIn)
+        check_admin_or_moderator_required(self.client.post, '/new-post', self.assertEqual, self.assertIn,
+                                          self.assertNotIn)
+
+    # Test add_model
+    def test_add_model(self):
+        """Test route for add_model."""
+        # Log in
+        self.login("moderator@test.com", "password")
+        # Request
+        file = FileStorage(filename="image.jpg", content_type="image/jpg")
+        car_data = {"name": "first", "price": 100, "year": 2001, "model": "first one", "image": file}
+        response = self.client.post('/cars/add', data={**car_data}, follow_redirects=True)
+        response_data = response.get_data(as_text=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(car_data["name"], response_data)
+        self.assertIn(f'/static/img/{file.filename}', response_data)
+
+    def test_add_model_invalid_data(self):
+        """Test route for add_model, invalid data."""
+
+        invalid_data = [
+            ({"name": "", "price": 100, "year": 2001, "model": "first one",
+              "image": FileStorage(filename="image.jpg", content_type="image/jpg")}, "required"),
+            ({"name": "first", "price": "", "year": 2001, "model": "first one",
+              "image": FileStorage(filename="image.jpg", content_type="image/jpg")}, "required"),
+            ({"name": "first", "price": 100, "year": "", "model": "first one",
+              "image": FileStorage(filename="image.jpg", content_type="image/jpg")}, "required"),
+            ({"name": "first", "price": 100, "year": 2001, "model": "",
+              "image": FileStorage(filename="image.jpg", content_type="image/jpg")}, "required"),
+            ({"name": "first", "price": 100, "year": 2001, "model": "first one", "image": ""}, "required"),
+            ({"name": "first", "price": 100, "year": 2001, "model": "first one",
+              "image": FileStorage(filename="image.pdf", content_type="application/pdf")}, "format")]
+        # Log in
+        self.login("moderator@test.com", "password")
+        # Request
+        for item in invalid_data:
+            response = self.client.post('/cars/add', data={**item[0]}, follow_redirects=True)
+            response_data = response.get_data(as_text=True)
+            self.assertEqual(response.status_code, 200)
+            if item[1] == "required":
+                self.assertIn("This field is required.", response_data)
+            else:
+                self.assertIn("Images only!", response_data)
+
+    # Test edit_car
+    def test_edit_car(self):
+        """Test route for edit_car."""
+        # Log in
+        self.login("moderator@test.com", "password")
+        # No cars
+        response = self.client.get('/cars/car_name/edit', follow_redirects=True)
+        response_data = response.get_data(as_text=True)
+        self.assertEqual(response.status_code, 404)
+        self.assertIn("Page Not Found", response_data)
+        # Add cars to db
+        self.add_cars_to_db()
+        # Select car
+        car = random.choice(Car.query.all())
+        # New request
+        new_car_data = {"price": 12345, "year": 1800, "model": "new model name"}
+        response = self.client.post(f'/cars/{car.name}/edit', data=new_car_data, follow_redirects=True)
+        response_data = response.get_data(as_text=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Changes saved.", response_data)
+        self.assertIn(str(new_car_data["price"]), response_data)
+        self.assertIn(str(new_car_data["year"]), response_data)
+        self.assertIn(new_car_data["model"], response_data)
+
+    def test_edit_car_invalid_data(self):
+        """Test route for edit_car, invalid data."""
+        invalid_data = [
+            {"price": "", "year": 2001, "model": "first one"},
+            {"price": 100, "year": "", "model": "first one"},
+            {"price": 100, "year": 2001, "model": ""}
+        ]
+        # Log in
+        self.login("moderator@test.com", "password")
+        # Add cars to db
+        self.add_cars_to_db()
+        # Select car
+        car = random.choice(Car.query.all())
+        # Request
+        for item in invalid_data:
+            response = self.client.post(f'/cars/{car.name}/edit', data=item, follow_redirects=True)
+            response_data = response.get_data(as_text=True)
+            self.assertEqual(response.status_code, 200)
+            self.assertIn("This field is required.", response_data)
+
+    # Test change_car_photo
+    def test_change_car_photo(self):
+        """Test route for change_car_photo."""
+        # Log in
+        self.login("moderator@test.com", "password")
+        # No cars
+        response = self.client.get('/cars/car_name/change_photo', follow_redirects=True)
+        response_data = response.get_data(as_text=True)
+        self.assertEqual(response.status_code, 404)
+        self.assertIn("Page Not Found", response_data)
+        # Add cars to db
+        self.add_cars_to_db()
+        # Select car
+        car = random.choice(Car.query.all())
+        # New request
+        file = FileStorage(filename="image.jpg", content_type="image/jpg")
+        response = self.client.post(f'/cars/{car.name}/change_photo', data={"image": file}, follow_redirects=True)
+        response_data = response.get_data(as_text=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Edit data", response_data)
+        self.assertIn("Change photo", response_data)
+        self.assertIn("Changes saved.", response_data)
+        self.assertIn("/static/img/image.jpg", response_data)
+
+    def test_change_car_photo_invalid_data(self):
+        """Test route for change_car_photo, invalid data."""
+        invalid_data = [
+            ({"image": ""}, "required"),
+            ({"image": FileStorage(filename="image.pdf", content_type="application/pdf")}, "format")
+        ]
+        # Log in
+        self.login("moderator@test.com", "password")
+        # Add cars to db
+        self.add_cars_to_db()
+        # Select car
+        car = random.choice(Car.query.all())
+        # New request
+        for item in invalid_data:
+            response = self.client.post(f'/cars/{car.name}/change_photo', data=item[0], follow_redirects=True)
+            response_data = response.get_data(as_text=True)
+            self.assertEqual(response.status_code, 200)
+            if item[1] == "required":
+                self.assertIn("This field is required.", response_data)
+            else:
+                self.assertIn("Images only!", response_data)
+
+    # Test add_new_post
+    def test_add_new_post(self):
+        """Test route for add_new_post."""
+        # Log in
+        self.login("moderator@test.com", "password")
+        # Request
+        file = FileStorage(filename="image.jpg", content_type="image/jpg")
+        post_data = {"title": "New post title", "news_text": "New post - text"}
+        response = self.client.post('/new-post', data={**post_data, "img_url": file}, follow_redirects=True)
+        response_data = response.get_data(as_text=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(post_data["title"], response_data)
+
+    def test_add_new_post_invalid_data(self):
+        """Test route for add_new_post, invalid data."""
+        invalid_data = [({"title": "", "news_text": "New post - text",
+                          "img_url": FileStorage(filename="image.jpg", content_type="image/jpg")}, "required"),
+                        ({"title": "New post title", "news_text": "",
+                          "img_url": FileStorage(filename="image.jpg", content_type="image/jpg")}, "required"),
+                        ({"title": "New post title", "news_text": "New post - text",
+                          "img_url": ""}, "required"),
+                        ({"title": "New post title", "news_text": "New post - text",
+                          "img_url": FileStorage(filename="image.pdf", content_type="application/pdf")}, "format")
+                        ]
+        # Log in
+        self.login("moderator@test.com", "password")
+        # Request
+        for item in invalid_data:
+            response = self.client.post('/new-post', data={**item[0]}, follow_redirects=True)
+        response_data = response.get_data(as_text=True)
+        self.assertEqual(response.status_code, 200)
+        if item[1] == "required":
+            self.assertIn("This field is required.", response_data)
+        else:
+            self.assertIn("Images only!", response_data)
