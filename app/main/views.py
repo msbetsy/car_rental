@@ -148,7 +148,7 @@ def show_car(car_name):
 @login_required
 @moderator_required
 def edit_car(car_name):
-    car_to_show = Car.query.filter_by(name=car_name).first()
+    car_to_show = Car.query.filter_by(name=car_name).first_or_404()
     form = CarEditForm()
     if form.validate_on_submit():
         car_to_show.price = form.price.data
@@ -171,7 +171,7 @@ def edit_car(car_name):
 @login_required
 @moderator_required
 def change_car_photo(car_name):
-    car_to_show = Car.query.filter_by(name=car_name).first()
+    car_to_show = Car.query.filter_by(name=car_name).first_or_404()
     form = CarChangeImageForm()
     if form.validate_on_submit():
 
