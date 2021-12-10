@@ -770,7 +770,7 @@ def check_img_name(image, old_image=None):
     :return: Safe filename
     :rtype: string
     """
-    is_file = os.path.isfile(os.path.join(BASEDIR, 'static\img\\', os.path.basename(image)))
+    is_file = os.path.isfile(os.path.join(BASEDIR, 'static\\img\\', os.path.basename(image)))
     filename = secure_filename(os.path.basename(image))
     if old_image != filename:
         if is_file:
@@ -778,7 +778,7 @@ def check_img_name(image, old_image=None):
         else:
             if filename.endswith(("png", "jpg", "jpeg", "gif")):
                 source = os.path.join(os.path.dirname(image), filename)
-                target = os.path.join(BASEDIR, 'static\img\\', filename)
+                target = os.path.join(BASEDIR, 'static\\img\\', filename)
 
                 try:
                     shutil.copyfile(source, target)
