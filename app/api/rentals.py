@@ -24,11 +24,13 @@ def show_rentals(users_id: int):
 @token_required
 @permission_required(Permission.ADMIN)
 def show_rental(users_id: int, car_id: int, user_id: int, date_time: int):
+    if len(str(date_time)) != 12:
+        return bad_request(message="Wrong from: acceptable format: YmdHM")
     date_time_f = "".join((str(date_time), '00.000000'))
     try:
         from_date = datetime.strptime(date_time_f, '%Y%m%d%H%M%S.%f')
     except ValueError:
-        bad_request(message="Wrong from: acceptable format: YmdHM")
+        return bad_request(message="Wrong from: acceptable format: YmdHM")
     query = Rental.query.get_or_404({"cars_id": car_id, "users_id": user_id, "from_date": from_date},
                                     description='Rental not found')
     params = request.args.get('params', "")
@@ -58,11 +60,14 @@ def add_rental(user_id: int):
 @token_required
 @permission_required(Permission.ADMIN)
 def delete_rental(users_id: int, car_id: int, user_id: int, date_time: int):
+    if len(str(date_time)) != 12:
+        return bad_request(message="Wrong from: acceptable format: YmdHM")
     date_time_f = "".join((str(date_time), '00.000000'))
     try:
         from_date = datetime.strptime(date_time_f, '%Y%m%d%H%M%S.%f')
     except ValueError:
         return bad_request(message="Wrong from: acceptable format: YmdHM")
+
     query = Rental.query.get_or_404({"cars_id": car_id, "users_id": user_id, "from_date": from_date},
                                     description='Rental not found')
     db.session.delete(query)
