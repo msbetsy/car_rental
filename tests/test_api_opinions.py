@@ -6,14 +6,25 @@ from app.models import Role, Opinion, User
 from tests.api_functions import token, create_user, check_missing_token_value, check_missing_token_wrong_value, \
     check_missing_token, request_with_features, check_content_type
 
+opinions_data = [{'author_id': 1, 'text': 'My opinion.', 'image': 'opinion1.jpg', 'date': datetime(2020, 5, 17)},
+                 {'author_id': 3, 'text': 'My text.', 'image': 'opinion3.jpg', 'date': datetime(2020, 5, 27)}]
 
-def change_dict_to_json(dict_name, params=None):
+opinions_invalid_data = [({"text": 34}, "text"), ({}, "text")]
+
+
+def make_opinions():
+    """Function that adds opinions to db."""
+    for item in opinions_data:
+        opinion = Opinion(**item)
+        db.session.add(opinion)
+        db.session.commit()
+
+
+def change_dict_to_json(dict_name):
     """Change dict to json format matching the response.
 
     :param dict_name: Name of the dictionary.
     :type dict_name: dict
-    :param params: Parameters not displayed in response.
-    :type params: list
     :return: Changed dict format
     :rtype: dict
     """
@@ -23,23 +34,25 @@ def change_dict_to_json(dict_name, params=None):
     changed_dict["date"] = changed_dict["date"].strftime("%d/%m/%Y, %H:%M:%S")
     del changed_dict["image"]
     del changed_dict["author_id"]
+    changed_dict["id"] = Opinion.query.filter_by(date=dict_name["date"]).first().id
+    return changed_dict
+
+
+def remove_params_from_dict(dict_name, params=None):
+    """Change dict to format matching the response.
+
+    :param dict_name: Name of the dictionary.
+    :type dict_name: dict
+    :param params: Parameters not displayed in response.
+    :type params: list
+    :return: Changed dict
+    :rtype: dict
+    """
+    changed_dict = dict_name.copy()
     if params is not None:
         for param in params:
             del changed_dict[param]
     return changed_dict
-
-
-def make_opinion():
-    """Function that contains possible opinion data - all cases are wrong.
-
-     :return: opinion
-     :rtype: list
-     """
-    opinion_data = [
-        ({"text": 34}, "text"),
-        ({}, "text")
-    ]
-    return opinion_data
 
 
 class OpinionsTestCase(unittest.TestCase):
@@ -73,111 +86,170 @@ class OpinionsTestCase(unittest.TestCase):
             'Content-Type': 'application/json'
         }
 
+    # Test show_opinions
     def test_show_opinions(self):
         """Test api for show_opinions with pagination, sorting, filtering records, correct data."""
-        opinion_first_dict = {'author_id': 1, 'text': 'My opinion.', 'image': 'opinion1.jpg',
-                              'date': datetime(2020, 5, 17)}
-        opinion_second_dict = {'author_id': 3, 'text': 'My text.', 'image': 'opinion3.jpg',
-                               'date': datetime(2020, 5, 27)}
-        opinion_first = Opinion(**opinion_first_dict)
-        opinion_second = Opinion(**opinion_second_dict)
-        db.session.add_all([opinion_first, opinion_second])
-        db.session.commit()
-
+        # Api headers
         api_headers = self.get_api_headers()
         del api_headers["Authorization"]
+
+        # Test request without features, no opinions
+        # Request
+        response = self.client.get('/api/v1/opinions/', headers=api_headers)
+        response_data = response.get_json()
+        # Expected results
+        expected_result = {'success': True,
+                           'number_of_records': len(Opinion.query.all()),
+                           'data': []}
+        # Tests
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers['Content-Type'], 'application/json')
+        self.assertDictEqual(expected_result, response_data)
+
+        # Add opinions to db
+        make_opinions()
+        # Change dict to json format
+        opinions = []
+        for opinion in opinions_data:
+            opinion = opinion.copy()
+            opinions.append(change_dict_to_json(opinion))
 
         # Test request without features
         response = self.client.get('/api/v1/opinions/', headers=api_headers)
         response_data = response.get_json()
+        # Expected results
         expected_result = {'success': True,
-                           'number_of_records': 2,
-                           'data': [
-                               {'id': 1, **change_dict_to_json(opinion_first_dict)},
-                               {'id': 2, **change_dict_to_json(opinion_second_dict)}
-                           ]}
+                           'number_of_records': len(Opinion.query.all()),
+                           'data': opinions}
+        # Tests
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.headers['Content-Type'], 'application/json')
         self.assertDictEqual(expected_result, response_data)
 
         # Test request with features
+        request_features = {'sort_by': '-id',
+                            'params': 'date,author_url',
+                            'filters': 'id[lt]=2'}
         response = self.client.get(
-            request_with_features(url='/api/v1/opinions/', sort_by="-id", params="date,author_url", filters="id[lt]=2"),
+            request_with_features(url='/api/v1/opinions/', **request_features),
             headers=api_headers)
         response_data = response.get_json()
+
+        # Expected results
+        filtered_opinions = [item for item in opinions if item['id'] < 2]
+        filtered_opinions_sorted = sorted(filtered_opinions, key=lambda item: item['id'], reverse=True)
+        filtered_opinions_sorted_params = []
+
+        for item in filtered_opinions_sorted:
+            filtered_opinions_sorted_params.append(remove_params_from_dict(item, ["author_url", "date"]))
+
         expected_result = {'success': True,
-                           'number_of_records': 1,
-                           'data': [
-                               {'id': 1, **change_dict_to_json(opinion_first_dict, ["author_url", "date"])}
-                           ]}
+                           'number_of_records': len(filtered_opinions_sorted_params),
+                           'data': filtered_opinions_sorted_params}
+        # Tests
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.headers['Content-Type'], 'application/json')
         self.assertDictEqual(expected_result, response_data)
 
         # Test pagination
+        request_features = {'per_page': '1',
+                            'params': 'date,author_url'}
         response = self.client.get(
-            request_with_features(url='/api/v1/opinions/', per_page="1", params="date,author_url"), headers=api_headers)
+            request_with_features(url='/api/v1/opinions/', **request_features), headers=api_headers)
         response_data = response.get_json()
+        # Expected results
+        opinions_without_params = []
+        for item in opinions:
+            opinions_without_params.append(remove_params_from_dict(item, ["author_url", "date"]))
         expected_result = {'success': True,
                            'number_of_records': 1,
-                           'data': [
-                               {'id': 1, **change_dict_to_json(opinion_first_dict, ["author_url", "date"])}
-                           ],
+                           'data': [{**opinions_without_params[0]}],
                            'pagination': {
                                "current_page_url": "/api/v1/opinions/?page=1&params=date%2Cauthor_url&per_page=1",
                                "next_page": "/api/v1/opinions/?page=2&params=date%2Cauthor_url&per_page=1",
                                "number_of_all_pages": 2,
                                "number_of_all_records": 2
                            }}
+        # Tests
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.headers['Content-Type'], 'application/json')
         self.assertDictEqual(expected_result, response_data)
 
+    # Test show_opinion
     def test_show_opinion(self):
         """Test api for show_opinion with filtering variables, correct data."""
-        opinion_dict = {'author_id': 1, 'text': 'My opinion.', 'image': 'opinion1.jpg', 'date': datetime(2020, 5, 17)}
-        opinion = Opinion(**opinion_dict)
-        db.session.add(opinion)
-        db.session.commit()
-
+        # Api headers
         api_headers = self.get_api_headers()
         del api_headers["Authorization"]
-        # Test request without features
-        response = self.client.get('/api/v1/opinions/1/', headers=api_headers)
-        response_data = response.get_json()
-        expected_result = {'success': True,
-                           'data': {'id': 1, **change_dict_to_json(opinion_dict)}
-                           }
 
+        # Test request without features, no opinions
+        # Request
+        opinion_id = 1
+        response = self.client.get(f'/api/v1/opinions/{opinion_id}/', headers=api_headers)
+        response_data = response.get_json()
+        # Expected results
+        expected_result = {'success': False,
+                           'error': f'Opinion with id {opinion_id} not found',
+                           }
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.headers['Content-Type'], 'application/json')
+        self.assertDictEqual(expected_result, response_data)
+
+        # Add opinions to db
+        make_opinions()
+        # Change dict to json format
+        opinions = []
+        for opinion in opinions_data:
+            opinion = opinion.copy()
+            opinions.append(change_dict_to_json(opinion))
+
+        # Test request without features
+        # Request
+        response = self.client.get(f'/api/v1/opinions/{opinion_id}/', headers=api_headers)
+        response_data = response.get_json()
+        # Expected result
+        filtered_opinions = [item for item in opinions if item['id'] == opinion_id]
+        expected_result = {'success': True,
+                           'data': {**filtered_opinions[0]}
+                           }
+        # Tests
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.headers['Content-Type'], 'application/json')
         self.assertDictEqual(expected_result, response_data)
 
         # Test request with features
-        response = self.client.get(request_with_features(url='/api/v1/opinions/1/', params="author_url"),
+        # Request
+        request_features = {'params': 'author_url'}
+        response = self.client.get(request_with_features(url=f'/api/v1/opinions/{opinion_id}/', **request_features),
                                    headers=api_headers)
         response_data = response.get_json()
+        # Expected result
+        filtered_opinions_without_params = []
+        for item in filtered_opinions:
+            filtered_opinions_without_params.append(remove_params_from_dict(item, ["author_url"]))
         expected_result = {'success': True,
-                           'data': {'id': 1, **change_dict_to_json(opinion_dict, ["author_url"])}
+                           'data': {**filtered_opinions_without_params[0]}
                            }
-
+        # Tests
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.headers['Content-Type'], 'application/json')
         self.assertDictEqual(expected_result, response_data)
 
     def test_show_opinion_invalid_data(self):
         """Test api for show_opinion."""
-
+        # Headers
         api_headers = self.get_api_headers()
         del api_headers["Authorization"]
+
         # Test request without features
-        response = self.client.get('/api/v1/opinions/1/', headers=api_headers)
+        response = self.client.get('/api/v1/opinions/opinion_name/', headers=api_headers)
         response_data = response.get_json()
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.headers['Content-Type'], 'application/json')
         self.assertFalse(response_data['success'])
-        self.assertIn("1", response_data['error'])
+        self.assertEqual(response_data['error'], 'not found')
 
+    # Test add_opinion
     def test_add_opinion(self):
         """Test api for add_opinion, correct data."""
         response = self.client.post('/api/v1/opinions/',
@@ -196,7 +268,7 @@ class OpinionsTestCase(unittest.TestCase):
 
     def test_add_opinion_invalid_data(self):
         """Test api for add_opinion."""
-        for opinion in make_opinion():
+        for opinion in opinions_invalid_data:
             response = self.client.post('/api/v1/opinions/',
                                         json=opinion[0],
                                         headers=self.get_api_headers())
