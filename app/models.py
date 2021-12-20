@@ -524,22 +524,22 @@ class Car(db.Model):
         :raises ValidationError: wrong attribute
         """
         car = Car.query.get_or_404(car_id)
-        name = json_data.get('name', car.name)
+        name = json_data.get('name', '')
         check_if_null(name, "name")
-        price = json_data.get('price', car.price)
+        price = json_data.get('price', '')
         check_if_null(price, "price")
-        year = json_data.get('year', car.year)
+        year = json_data.get('year', '')
         check_if_null(year, "year")
-        model = json_data.get('model', car.model)
+        model = json_data.get('model', '')
         check_if_null(model, "model")
 
         if 'image' in json_data:
             img = json_data.get('image')
             if not isinstance(img, str):
                 raise ValidationError('Wrong value.', 'image')
-            image = check_img_name(img, car.image)
+            image = check_img_name(img, 'no_img.jpg')
         else:
-            image = car.image
+            image = 'no_img.jpg'
 
         if not isinstance(year, int) or year > datetime.today().year:
             raise ValidationError('Wrong value.', 'year')
