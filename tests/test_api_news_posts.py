@@ -1,8 +1,7 @@
 """This module stores tests for API - news_posts module."""
 import unittest
-from datetime import datetime
 from app import create_app, db
-from app.models import Role, NewsPost, User
+from app.models import Role, NewsPost, Comment
 from tests.api_functions import token, create_user, create_moderator, check_missing_token_value, \
     check_missing_token_wrong_value, check_missing_token, request_with_features, check_content_type, check_permissions
 
@@ -17,13 +16,11 @@ post_invalid_data = [
 ]
 
 
-def change_dict_to_json(dict_name, params=None):
+def change_dict_to_json(dict_name):
     """Change dict to json format matching the response.
 
     :param dict_name: Name of the dictionary.
     :type dict_name: dict
-    :param params: Parameters not displayed in response.
-    :type params: list
     :return: Changed dict format
     :rtype: dict
     """
@@ -33,11 +30,30 @@ def change_dict_to_json(dict_name, params=None):
             changed_dict["img_url"] = "".join(('/static/img/', changed_dict["img_url"]))
     else:
         changed_dict["img_url"] = "".join(('/static/img/', "no_img.jpg"))
-    if 'date' not in changed_dict:
-        changed_dict["date"] = datetime.now().strftime("%Y-%m-%d")
     if "body" in changed_dict:
         changed_dict["text"] = changed_dict["body"]
         del changed_dict["body"]
+    changed_dict["id"] = NewsPost.query.filter_by(title=dict_name["title"]).first().id
+    if 'date' not in changed_dict:
+        changed_dict["date"] = NewsPost.query.get(changed_dict["id"]).date
+    changed_dict["user_url"] = "".join(
+        ('/api/v1/users/', str(NewsPost.query.get(changed_dict["id"]).author_id), '/'))
+    changed_dict["comments_urls"] = [item for item in Comment.query.filter_by(post_id=changed_dict["id"]).all()]
+    changed_dict["comments_number"] = len(changed_dict["comments_urls"])
+    return changed_dict
+
+
+def remove_params_from_dict(dict_name, params=None):
+    """Change dict to format matching the response.
+
+    :param dict_name: Name of the dictionary.
+    :type dict_name: dict
+    :param params: Parameters not displayed in response.
+    :type params: list
+    :return: Changed dict
+    :rtype: dict
+    """
+    changed_dict = dict_name.copy()
     if params is not None:
         for param in params:
             del changed_dict[param]
@@ -107,37 +123,39 @@ class NewsPostsTestCase(unittest.TestCase):
     # Test show_post
     def test_show_post(self):
         """Test api for show_post, valid data."""
+        # Headers
         api_headers = self.get_api_headers()
         del api_headers["Authorization"]
 
         # Test when no posts
-        response = self.client.get('/api/v1/posts/1/', headers=api_headers)
+        post_id = 1
+        # Request
+        response = self.client.get(f'/api/v1/posts/{post_id}/', headers=api_headers)
         response_data = response.get_json()
+        # Tests
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.headers['Content-Type'], 'application/json')
         self.assertFalse(response_data['success'])
-        self.assertIn("1", response_data['error'])
+        self.assertIn(str(post_id), response_data['error'])
 
         # Add posts to db
         dates = ["2020-10-01", "2020-11-01"]
         authors_id = [1, 2]
         make_posts(dates, authors_id)
+        # Change dict to json format
+        posts = []
+        for post in post_data:
+            post = post.copy()
+            posts.append(change_dict_to_json(post))
 
         # Test request without features
-        response = self.client.get('/api/v1/posts/1/', headers=api_headers)
+        # Request
+        response = self.client.get(f'/api/v1/posts/{post_id}/', headers=api_headers)
         response_data = response.get_json()
-
         # Expected result
-        all_posts_data = [post_data[0].copy(), post_data[1].copy()]
-        all_posts_data[0]["date"] = dates[0]
-        all_posts_data[1]["date"] = dates[1]
-        news_dict = {'id': 1,
-                     "comments_urls": [],
-                     "comments_number": 0,
-                     "user_url": '/api/v1/users/1/',
-                     **change_dict_to_json(all_posts_data[0])}
+        filtered_posts = [item for item in posts if item['id'] == post_id]
         expected_result = {'success': True,
-                           'data': news_dict
+                           'data': filtered_posts[0]
                            }
         # Tests
         self.assertEqual(response.status_code, 200)
@@ -147,80 +165,84 @@ class NewsPostsTestCase(unittest.TestCase):
     # Test show_posts
     def test_show_posts(self):
         """Test api for show_posts."""
+        # Headers
+        api_headers = self.get_api_headers()
+        del api_headers["Authorization"]
+        # Test request without features, no posts
+        # Request
+        response = self.client.get('/api/v1/posts/', headers=api_headers)
+        response_data = response.get_json()
+        # Tests
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers['Content-Type'], 'application/json')
+        self.assertEqual(response_data['data'], [])
+        self.assertEqual(response_data['number_of_records'], 0)
+        self.assertTrue(response_data['success'])
+
         # Add posts to db
         dates = ["2020-10-01", "2020-11-01"]
         authors_id = [1, 2]
         make_posts(dates, authors_id)
-
-        api_headers = self.get_api_headers()
-        del api_headers["Authorization"]
+        # Change dict to json format
+        posts = []
+        for post in post_data:
+            post = post.copy()
+            posts.append(change_dict_to_json(post))
 
         # Test request without features
+        # Request
         response = self.client.get('/api/v1/posts/', headers=api_headers)
         response_data = response.get_json()
 
         # Expected result
-        all_posts_data = [post_data[0].copy(), post_data[1].copy()]
-        all_posts_data[0]["date"] = dates[0]
-        all_posts_data[1]["date"] = dates[1]
-        news_dict = [{'id': 1,
-                      "comments_urls": [],
-                      "comments_number": 0,
-                      "user_url": '/api/v1/users/1/',
-                      **change_dict_to_json(all_posts_data[0])},
-                     {'id': 2,
-                      "comments_urls": [],
-                      "comments_number": 0,
-                      "user_url": '/api/v1/users/2/',
-                      **change_dict_to_json(all_posts_data[1])}
-                     ]
         expected_result = {'success': True,
-                           'number_of_records': 2,
-                           'data': news_dict
+                           'number_of_records': len(posts),
+                           'data': posts
                            }
-
+        # Tests
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.headers['Content-Type'], 'application/json')
         self.assertDictEqual(expected_result, response_data)
 
         # Test request with features: sort_by, params
-        response = self.client.get(
-            request_with_features(url='/api/v1/posts/', sort_by="-id",
-                                  params="user_url,comments_number,comments_urls"),
-            headers=api_headers)
+        # Request
+        request_features = {'sort_by': '-id',
+                            'params': 'user_url,comments_number,comments_urls'}
+        response = self.client.get(request_with_features(url='/api/v1/posts/', **request_features), headers=api_headers)
         response_data = response.get_json()
+        # Expected result
+        sorted_posts = sorted(posts, key=lambda post_item: post_item['id'], reverse=True)
+        sorted_posts_without_params = []
+        for item in sorted_posts:
+            sorted_posts_without_params.append(
+                remove_params_from_dict(item, ["user_url", "comments_number", "comments_urls"]))
         expected_result = {'success': True,
-                           'number_of_records': len(NewsPost.query.all()),
-                           'data': [
-                               {
-                                   **change_dict_to_json(news_dict[1],
-                                                         ["user_url", "comments_number", "comments_urls"])
-                               },
-                               {
-                                   **change_dict_to_json(news_dict[0],
-                                                         ["user_url", "comments_number", "comments_urls"])
-                               }
-                           ]}
-
+                           'number_of_records': len(sorted_posts_without_params),
+                           'data': sorted_posts_without_params}
+        # Tests
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.headers['Content-Type'], 'application/json')
         self.assertDictEqual(expected_result, response_data)
 
         # Test request with features: apply_filter, apply_args_filter, pagination
-        response = self.client.get(
-            request_with_features(url='/api/v1/posts/', sort_by="-id", per_page="1", filters="id[gte]=2",
-                                  filer_values="comments_number=0"), headers=api_headers)
-
+        # Request
+        request_features = {'sort_by': '-id',
+                            'per_page': '1',
+                            'filters': 'id[gte]=2',
+                            'filer_values': 'comments_number=0'}
+        response = self.client.get(request_with_features(url='/api/v1/posts/', **request_features), headers=api_headers)
         response_data = response.get_json()
+        # Expected result
+        filtered_posts = [item for item in posts if item['id'] >= 2 and item['comments_number'] == 0]
+        filtered_posts_sorted = sorted(filtered_posts, key=lambda post_item: post_item['id'], reverse=True)
         expected_result = {'success': True,
-                           'number_of_records': 1,
-                           'data': [
-                               {**change_dict_to_json(news_dict[1])}],
+                           'number_of_records': len(filtered_posts_sorted),
+                           'data': filtered_posts_sorted,
                            'pagination': {
                                'current_page_url':
                                    '/api/v1/posts/?page=1&sort=-id&per_page=1&id%5Bgte%5D=2&comments_number=0',
-                               'number_of_all_pages': 1,
-                               'number_of_all_records': 1}
+                               'number_of_all_pages': len(filtered_posts_sorted),
+                               'number_of_all_records': len(filtered_posts_sorted)}
                            }
         # Tests
         self.assertEqual(response.status_code, 200)
@@ -231,18 +253,12 @@ class NewsPostsTestCase(unittest.TestCase):
     def test_add_post(self):
         """Test api for add_post, valid data."""
         post_json_data = {"title": "my title", "text": "my text"}
-        response = self.client.post('/api/v1/posts/', json=post_json_data,
-                                    headers=self.get_api_headers_moderator())
+        # Request
+        response = self.client.post('/api/v1/posts/', json=post_json_data, headers=self.get_api_headers_moderator())
         response_data = response.get_json()
-
         # Expected result
-        author_id = User.query.filter_by(email="moderator@test.com").first().id
         expected_result = {'success': True,
-                           'data': {'id': 1,
-                                    "comments_urls": [],
-                                    "comments_number": 0,
-                                    "user_url": f'/api/v1/users/{author_id}/',
-                                    **change_dict_to_json(post_json_data)}
+                           'data': change_dict_to_json(post_json_data)
                            }
         # Tests
         self.assertEqual(response.status_code, 201)
@@ -252,19 +268,8 @@ class NewsPostsTestCase(unittest.TestCase):
     def test_add_post_invalid_data(self):
         """Test api for add_post, invalid data."""
         for post in post_invalid_data:
-            response = self.client.post('/api/v1/posts/', json=post[0],
-                                        headers=self.get_api_headers_moderator())
+            response = self.client.post('/api/v1/posts/', json=post[0], headers=self.get_api_headers_moderator())
             response_data = response.get_json()
-
-            # Expected result
-            author_id = User.query.filter_by(email="moderator@test.com").first().id
-            expected_result = {'success': True,
-                               'data': {'id': 1,
-                                        "comments_urls": [],
-                                        "comments_number": 0,
-                                        "user_url": f'/api/v1/users/{author_id}/',
-                                        **change_dict_to_json(post[0])}
-                               }
             # Tests
             if post[1] == "required":
                 self.assertEqual(response_data['error']['message'], f"{post[2]} can't be null")
