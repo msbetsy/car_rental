@@ -5,107 +5,66 @@ from app.models import Role, User
 from tests.api_functions import token, create_user, create_admin, create_moderator, check_content_type, \
     check_missing_token, check_missing_token_value, check_missing_token_wrong_value, check_permissions
 
+registration_data = [
+    ({'name': 'name', 'surname': 'surname', 'password': '123456', 'telephone': 1234}, 'email'),
+    ({'surname': 'surname', 'password': '123456', 'email': 'e@test.com', 'telephone': 1234}, 'name'),
+    ({'name': 'name', 'password': '123456', 'email': 'e@test.com', 'telephone': 1234}, 'surname'),
+    ({'name': 'name', 'surname': 'surname', 'email': 'e@test.com', 'telephone': 1234}, 'password'),
+    ({'name': 'name', 'surname': 'surname', 'password': '123456', 'email': 'e@test.com'}, 'telephone'),
+    ({'name': 'name', 'surname': 'surname', 'password': '123456',
+      'email': 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee@test.com',
+      'telephone': 1234}, 'email'),
+    ({'name': 'name', 'surname': 'surname', 'password': '123456',
+      'email': 'ee.test.com',
+      'telephone': 1234}, 'email')]
 
-def register():
-    """Function that contains possible registration data - all cases are wrong.
+login_data = [
+    ({'password': '123456'}, 'email'),
+    ({'email': 'e@test.com'}, 'password'),
+    ({'password': '123456', 'email': 'test@test.com'}, 'credentials'),
+    ({'password': '123456', 'email': 'e@test.com'}, 'credentials')
+]
 
-    :return: Registration cases
-    :rtype: list
-    """
-    registration_data = [
-        ({'name': 'name', 'surname': 'surname', 'password': '123456', 'telephone': 1234}, 'email'),
-        ({'surname': 'surname', 'password': '123456', 'email': 'e@test.com', 'telephone': 1234}, 'name'),
-        ({'name': 'name', 'password': '123456', 'email': 'e@test.com', 'telephone': 1234}, 'surname'),
-        ({'name': 'name', 'surname': 'surname', 'email': 'e@test.com', 'telephone': 1234}, 'password'),
-        ({'name': 'name', 'surname': 'surname', 'password': '123456', 'email': 'e@test.com'}, 'telephone'),
-        ({'name': 'name', 'surname': 'surname', 'password': '123456',
-          'email': 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee@test.com',
-          'telephone': 1234}, 'email'),
-        ({'name': 'name', 'surname': 'surname', 'password': '123456',
-          'email': 'ee.test.com',
-          'telephone': 1234}, 'email')
-    ]
-    return registration_data
+update_credentials_data = [
+    ({'email': 'test@test.com', 'new_email': 'test2@test.com'}, 'no_password'),
+    ({'password': '123456', 'email': 'test@test.com'}, 'new_password, new_email'),
+    ({'email': 'test@test.com', 'new_email': 'test2@test.com', 'password': '1234'}, 'password'),
+    ({'new_email': 'test@test.com', 'password': 'password'}, 'new_email')
+]
 
+data_for_update_invalid_data = [
+    ({'name': 'name', 'surname': 'surname', 'email': 'test@test.com', 'password': '123456', 'telephone': 1234},
+     'email'),
+    ({'name': 'name', 'surname': 'surname', 'email': 'test2@test.com', 'telephone': 1234},
+     'no_password'),
+    ({'name': 'name', 'surname': 'surname', 'email': 'test2@test.com', 'password': 'password22', 'telephone': 1234},
+     'wrong_password'),
+    ({'name': 'name', 'email': 'test2@test.com', 'password': 'password22', 'new_password': '123'},
+     'password'),
+    ({'name': 'name', 'surname': 'surname', 'password': 'password',
+      'email': 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee@test.com',
+      'telephone': 1234}, 'long_email'),
+    ({'name': 'name', 'surname': 'surname', 'password': 'password',
+      'email': 'ee.test.com',
+      'telephone': 1234}, 'wrong_email')
+]
 
-def login():
-    """Function that contains possible login data - all cases are wrong.
-
-     :return: Login cases
-     :rtype: list
-     """
-    login_data = [
-        ({'password': '123456'}, 'email'),
-        ({'email': 'e@test.com'}, 'password'),
-        ({'password': '123456', 'email': 'test@test.com'}, 'credentials'),
-        ({'password': '123456', 'email': 'e@test.com'}, 'credentials')
-    ]
-    return login_data
-
-
-def update_credentials():
-    """Function that contains possible update credentials data - all cases are wrong.
-
-     :return: Update cases
-     :rtype: list
-     """
-    update_credentials_data = [
-        ({'email': 'test@test.com', 'new_email': 'test2@test.com'}, 'no_password'),
-        ({'password': '123456', 'email': 'test@test.com'}, 'new_password, new_email'),
-        ({'email': 'test@test.com', 'new_email': 'test2@test.com', 'password': '1234'}, 'password'),
-        ({'new_email': 'test@test.com', 'password': 'password'}, 'new_email')
-    ]
-    return update_credentials_data
-
-
-def update_data():
-    """Function that contains possible update data - all cases are wrong.
-
-    :return: Update cases
-    :rtype: list
-    """
-    data = [
-        ({'name': 'name', 'surname': 'surname', 'email': 'test@test.com', 'password': '123456', 'telephone': 1234},
-         'email'),
-        ({'name': 'name', 'surname': 'surname', 'email': 'test2@test.com', 'telephone': 1234},
-         'no_password'),
-        ({'name': 'name', 'surname': 'surname', 'email': 'test2@test.com', 'password': 'password22', 'telephone': 1234},
-         'wrong_password'),
-        ({'name': 'name', 'email': 'test2@test.com', 'password': 'password22', 'new_password': '123'},
-         'password'),
-        ({'name': 'name', 'surname': 'surname', 'password': 'password',
-          'email': 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee@test.com',
-          'telephone': 1234}, 'long_email'),
-        ({'name': 'name', 'surname': 'surname', 'password': 'password',
-          'email': 'ee.test.com',
-          'telephone': 1234}, 'wrong_email')
-    ]
-    return data
-
-
-def update_data_by_admin():
-    """Function that contains possible update data by admin - all cases are wrong.
-
-    :return: Update cases
-    :rtype: list
-    """
-    user_to_edit_id = User.query.filter_by(email='test@test.com').first().id
-    data = [
-        ({'name': 'name', 'surname': 'surname', 'email': 'test@test.com'}, 'no_user_to_edit_id'),
-        ({'name': 'name', 'surname': 'surname', 'email': 'test2@test.com', 'telephone': 1234, 'user_to_edit_id': 1.4},
-         'user_to_edit_id'),
-        ({'name': 'name', 'surname': 'surname', 'role_id': 4, 'user_to_edit_id': user_to_edit_id},
-         'role_id'),
-        ({'name': 'name', 'email': 'test@test.com', 'password': 'password22', 'new_password': '123',
-          'user_to_edit_id': user_to_edit_id}, 'email'),
-        ({'name': 'name', 'surname': 'surname', 'user_to_edit_id': user_to_edit_id,
-          'email': 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee@test.com',
-          'telephone': 1234}, 'long_email'),
-        ({'name': 'name', 'surname': 'surname', 'user_to_edit_id': user_to_edit_id,
-          'email': 'ee.test.com',
-          'telephone': 1234}, 'wrong_email')
-    ]
-    return data
+data_for_update_by_admin_invalid_data = [
+    ({'name': 'name', 'surname': 'surname', 'email': 'test@test.com'}, 'no_user_to_edit_id'),
+    ({'name': 'name', 'surname': 'surname', 'email': 'test2@test.com', 'telephone': 1234, 'user_to_edit_id': 1.4},
+     'user_to_edit_id'),
+    ({'name': 'name', 'surname': 'surname', 'role_id': 4,
+      'user_to_edit_id': User.query.filter_by(email='test@test.com').first().id},
+     'role_id'),
+    ({'name': 'name', 'email': 'test@test.com', 'password': 'password22', 'new_password': '123',
+      'user_to_edit_id': User.query.filter_by(email='test@test.com').first().id}, 'email'),
+    ({'name': 'name', 'surname': 'surname', 'user_to_edit_id': User.query.filter_by(email='test@test.com').first().id,
+      'email': 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee@test.com',
+      'telephone': 1234}, 'long_email'),
+    ({'name': 'name', 'surname': 'surname', 'user_to_edit_id': User.query.filter_by(email='test@test.com').first().id,
+      'email': 'ee.test.com',
+      'telephone': 1234}, 'wrong_email')
+]
 
 
 def update_user_correct_request(client, api_headers):
@@ -262,7 +221,7 @@ class AuthenticationTestCase(unittest.TestCase):
     def test_update_user_by_admin_invalid_data(self):
         """Test api for update user by admin, incorrect data."""
         api_headers = self.get_api_headers_admin()
-        for item in update_data_by_admin():
+        for item in data_for_update_by_admin_invalid_data:
             response = self.client.put('/api/v1/auth/admin/', json=item[0], headers=api_headers,
                                        follow_redirects=True)
             response_data = response.get_json()
@@ -335,7 +294,7 @@ class AuthenticationTestCase(unittest.TestCase):
         """Test api for registration, incorrect data."""
         api_headers = self.get_api_headers()
         del api_headers['Authorization']
-        for item in register():
+        for item in registration_data:
             response = self.client.post('/api/v1/auth/register/',
                                         json=item[0], headers=api_headers)
             response_data = response.get_json()
@@ -381,7 +340,7 @@ class AuthenticationTestCase(unittest.TestCase):
         """Test api for registration, incorrect data."""
         api_headers = self.get_api_headers()
         del api_headers['Authorization']
-        for item in login():
+        for item in login_data:
             response = self.client.post('/api/v1/auth/login/',
                                         json=item[0], headers=api_headers)
             response_data = response.get_json()
@@ -440,7 +399,7 @@ class AuthenticationTestCase(unittest.TestCase):
 
     def test_update_user_invalid_data(self):
         """Test api for updating user, incorrect data.."""
-        for item in update_data():
+        for item in data_for_update_invalid_data:
             response = self.client.put('/api/v1/auth/user/', json=item[0], headers=self.get_api_headers(),
                                        follow_redirects=True)
             response_data = response.get_json()
@@ -482,7 +441,7 @@ class AuthenticationTestCase(unittest.TestCase):
 
     def test_update_credentials_invalid_data(self):
         """Test api for update credentials, incorrect data."""
-        for item in update_credentials():
+        for item in update_credentials_data:
             response = self.client.patch('/api/v1/auth/user/',
                                          json=item[0], headers=self.get_api_headers())
             response_data = response.get_json()
