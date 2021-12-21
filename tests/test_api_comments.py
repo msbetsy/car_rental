@@ -6,14 +6,35 @@ from app.models import Role, Comment, NewsPost
 from tests.api_functions import token, create_user, check_missing_token_value, check_missing_token_wrong_value, \
     check_missing_token, request_with_features, check_content_type
 
+comments_data = [{"post_id": 2, "author_id": 1, "text": "New one", "date": datetime(2020, 6, 30),
+                  "parent_comment": 2},
+                 {"post_id": 1, "author_id": 2, "text": "New comment", "date": datetime(2020, 5, 27),
+                  "parent_comment": 0}]
+comments_invalid_data = [
+    ({"post_id": 2, "author_id": 1, "text": "New", "parent_comment": 0, "upper_comment": 0}, "post"),
+    ({"author_id": 1, "text": "New", "parent_comment": 0, "upper_comment": 0}, "post_id"),
+    ({"post_id": 1, "author_id": 1, "text": 123, "parent_comment": "9", "upper_comment": 0}, "text"),
+    ({"post_id": 1, "author_id": 1, "parent_comment": "9", "upper_comment": 0}, "text"),
+    ({"post_id": 1, "author_id": 1, "text": "New", "parent_comment": 0, "upper_comment": "5"}, "upper_comment"),
+    ({"post_id": 1, "author_id": 1, "text": "New", "parent_comment": 0}, "upper_comment"),
+    ({"post_id": 0, "author_id": 1, "text": "New", "parent_comment": 0, "upper_comment": 0}, "post"),
+    ({"post_id": 1, "author_id": 1, "text": "New", "parent_comment": 0, "upper_comment": -1}, "upper_comment")
+]
 
-def change_dict_to_json(dict_name, params=None):
+
+def make_comments():
+    """Function that adds comments to db."""
+    for item in comments_data:
+        comment = Comment(**item)
+        db.session.add(comment)
+        db.session.commit()
+
+
+def change_dict_to_json(dict_name):
     """Change dict to json format matching the response.
 
     :param dict_name: Name of the dictionary.
     :type dict_name: dict
-    :param params: Parameters not displayed in response.
-    :type params: list
     :return: Changed dict format
     :rtype: dict
     """
@@ -25,36 +46,41 @@ def change_dict_to_json(dict_name, params=None):
 
     changed_dict["author_url"] = "".join(('/api/v1/users/', str(changed_dict["author_id"]), "/"))
     changed_dict["post_url"] = "".join(('/api/v1/posts/', str(changed_dict["post_id"]), "/"))
+
     if "date" in changed_dict:
+        changed_dict["id"] = Comment.query.filter_by(post_id=dict_name["post_id"], author_id=dict_name["author_id"],
+                                                     parent_comment=changed_dict["parent_comment"],
+                                                     date=changed_dict["date"]).first().id
         changed_dict["date"] = changed_dict["date"].strftime("%d/%m/%Y, %H:%M:%S")
     else:
+        changed_dict["id"] = Comment.query.filter_by(post_id=dict_name["post_id"], author_id=dict_name["author_id"],
+                                                     parent_comment=changed_dict["parent_comment"],
+                                                     date=datetime.today()).first().id
         changed_dict["date"] = datetime.today().strftime("%d/%m/%Y, %H:%M:%S")
+
     del changed_dict["parent_comment"]
     del changed_dict["author_id"]
     del changed_dict["post_id"]
+    if 'upper_comment' in changed_dict:
+        del changed_dict['upper_comment']
+    return changed_dict
+
+
+def remove_params_from_dict(dict_name, params=None):
+    """Change dict to format matching the response.
+
+    :param dict_name: Name of the dictionary.
+    :type dict_name: dict
+    :param params: Parameters not displayed in response.
+    :type params: list
+    :return: Changed dict
+    :rtype: dict
+    """
+    changed_dict = dict_name.copy()
     if params is not None:
         for param in params:
             del changed_dict[param]
     return changed_dict
-
-
-def make_comment():
-    """Function that contains possible comment data - all cases are wrong.
-
-     :return: comment
-     :rtype: list
-     """
-    comment_data = [
-        ({"post_id": 2, "author_id": 1, "text": "New", "parent_comment": 0, "upper_comment": 0}, "post"),
-        ({"author_id": 1, "text": "New", "parent_comment": 0, "upper_comment": 0}, "post_id"),
-        ({"post_id": 1, "author_id": 1, "text": 123, "parent_comment": "9", "upper_comment": 0}, "text"),
-        ({"post_id": 1, "author_id": 1, "parent_comment": "9", "upper_comment": 0}, "text"),
-        ({"post_id": 1, "author_id": 1, "text": "New", "parent_comment": 0, "upper_comment": "5"}, "upper_comment"),
-        ({"post_id": 1, "author_id": 1, "text": "New", "parent_comment": 0}, "upper_comment"),
-        ({"post_id": 0, "author_id": 1, "text": "New", "parent_comment": 0, "upper_comment": 0}, "post"),
-        ({"post_id": 1, "author_id": 1, "text": "New", "parent_comment": 0, "upper_comment": -1}, "upper_comment")
-    ]
-    return comment_data
 
 
 class CommentsTestCase(unittest.TestCase):
@@ -88,149 +114,204 @@ class CommentsTestCase(unittest.TestCase):
             'Content-Type': 'application/json'
         }
 
+    # Test show_comment
     def test_show_comment(self):
         """Test api for show_comment with filtering variables, correct data."""
-        comment_dict = {"post_id": 2, "author_id": 1, "text": "New comment", "date": datetime(2020, 5, 27),
-                        "parent_comment": 2}
-        comment = Comment(**comment_dict)
-        db.session.add(comment)
-        db.session.commit()
-
+        comment_id = 1
+        # Headers
         api_headers = self.get_api_headers()
         del api_headers["Authorization"]
 
-        # Test request without features
-        response = self.client.get('/api/v1/comments/1/', headers=api_headers)
+        # Test request without features, no comments in db
+        # Request
+        response = self.client.get(f'/api/v1/comments/{comment_id}/', headers=api_headers)
         response_data = response.get_json()
+        # Tests
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.headers['Content-Type'], 'application/json')
+        self.assertEqual(response_data['error'], f'Comment with id {comment_id} not found')
+        self.assertFalse(response_data['success'])
+
+        # Add comments to db
+        make_comments()
+        # Change dict to json format
+        comments = []
+        for comment in comments_data:
+            comment = comment.copy()
+            comments.append(change_dict_to_json(comment))
+
+        # Test request without features
+        # Request
+        response = self.client.get(f'/api/v1/comments/{comment_id}/', headers=api_headers)
+        response_data = response.get_json()
+        # Expected result
         expected_result = {'success': True,
-                           'data': {'id': 1, **change_dict_to_json(comment_dict)}
+                           'data': [item for item in comments if item['id'] == comment_id][0]
                            }
+        # Tests
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.headers['Content-Type'], 'application/json')
         self.assertDictEqual(expected_result, response_data)
 
         # Test request with features
+        # Request
+        request_features = {'params': 'author_url,upper_comment_url'}
         response = self.client.get(
-            request_with_features(url='/api/v1/comments/1/', params="author_url,upper_comment_url"),
-            headers=api_headers)
+            request_with_features(url=f'/api/v1/comments/{comment_id}/', **request_features), headers=api_headers)
         response_data = response.get_json()
-        expected_result = {'success': True,
-                           'data': {'id': 1,
-                                    **change_dict_to_json(comment_dict, ["author_url", "upper_comment_url"])
-                                    }
-                           }
+        # Expected result
+        comments_params = []
+        for item in comments:
+            comments_params.append(remove_params_from_dict(item, ["author_url", "upper_comment_url"]))
 
+        expected_result = {'success': True,
+                           'data': comments_params[0]}
+        # Tests
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.headers['Content-Type'], 'application/json')
         self.assertDictEqual(expected_result, response_data)
 
     def test_show_comment_invalid_data(self):
         """Test api for show_comments."""
+        # Headers
         api_headers = self.get_api_headers()
         del api_headers["Authorization"]
-        comment_id = 1
+
         # Test request without features
-        response = self.client.get(f'/api/v1/comments/{comment_id}/', headers=api_headers)
+        # Request
+        response = self.client.get('/api/v1/comments/comment_id/', headers=api_headers)
         response_data = response.get_json()
+        # Tests
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.headers['Content-Type'], 'application/json')
         self.assertFalse(response_data['success'])
-        self.assertEqual(response_data['error'], f'Comment with id {comment_id} not found')
+        self.assertEqual(response_data['error'], 'not found')
 
+    # Test show_comments
     def test_show_comments(self):
         """Test api for show_comments with pagination, sorting, filtering records, correct data."""
-        comment_first_dict = {"post_id": 2, "author_id": 1, "text": "New one", "date": datetime(2020, 6, 30),
-                              "parent_comment": 2}
-        comment_second_dict = {"post_id": 1, "author_id": 2, "text": "New comment", "date": datetime(2020, 5, 27),
-                               "parent_comment": 0}
-        comment_first = Comment(**comment_first_dict)
-        comment_second = Comment(**comment_second_dict)
-        db.session.add_all([comment_first, comment_second])
-        db.session.commit()
-
+        # Headers
         api_headers = self.get_api_headers()
         del api_headers["Authorization"]
 
-        # Test request without features
+        # Test request without features, no comments
+        # Request
         response = self.client.get('/api/v1/comments/', headers=api_headers)
         response_data = response.get_json()
+        # Expected results
         expected_result = {'success': True,
                            'number_of_records': len(Comment.query.all()),
-                           'data': [{'id': 1, **change_dict_to_json(comment_first_dict)},
-                                    {'id': 2, **change_dict_to_json(comment_second_dict)}
-                                    ]
+                           'data': []}
+        # Tests
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers['Content-Type'], 'application/json')
+        self.assertDictEqual(expected_result, response_data)
+
+        # Add comments
+        make_comments()
+        # Change dict to json format
+        comments = []
+        for comment in comments_data:
+            comment = comment.copy()
+            comments.append(change_dict_to_json(comment))
+
+        # Test request without features
+        # Request
+        response = self.client.get('/api/v1/comments/', headers=api_headers)
+        response_data = response.get_json()
+        # Expected result
+        expected_result = {'success': True,
+                           'number_of_records': len(Comment.query.all()),
+                           'data': comments
                            }
+        # Tests
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.headers['Content-Type'], 'application/json')
         self.assertDictEqual(expected_result, response_data)
 
         # Test request with features
+        # Request
+        request_features = {'sort_by': 'date',
+                            'params': 'author_url,post_url,upper_comment_url'}
         response = self.client.get(
-            request_with_features(url='/api/v1/comments/', sort_by="date",
-                                  params="author_url,post_url,upper_comment_url"), headers=api_headers)
+            request_with_features(url='/api/v1/comments/', **request_features), headers=api_headers)
         response_data = response.get_json()
+        # Expected result
+        sorted_comments = sorted(comments, key=lambda comments_item: comments_item['date'])
+        sorted_comments_params = []
+        for item in sorted_comments:
+            sorted_comments_params.append(
+                remove_params_from_dict(item, ["author_url", "post_url", "upper_comment_url"]))
+
         expected_result = {'success': True,
-                           'number_of_records': 2,
-                           'data': [
-                               {'id': 2,
-                                **change_dict_to_json(comment_second_dict,
-                                                      ["author_url", "post_url", "upper_comment_url"])},
-                               {'id': 1,
-                                **change_dict_to_json(comment_first_dict,
-                                                      ["author_url", "post_url", "upper_comment_url"])}
-                           ]}
+                           'number_of_records': len(sorted_comments_params),
+                           'data': sorted_comments_params}
+        # Tests
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.headers['Content-Type'], 'application/json')
         self.assertDictEqual(expected_result, response_data)
 
         # Test pagination
-        response = self.client.get(
-            request_with_features(url='/api/v1/comments/', per_page="1", filters="id[lt]=2",
-                                  params="author_url,post_url,upper_comment_url"), headers=api_headers)
+        # Request
+        request_features = {'per_page': '1',
+                            'filters': 'id[lt]=2',
+                            'params': 'author_url,post_url,upper_comment_url'}
+        response = self.client.get(request_with_features(url='/api/v1/comments/', **request_features),
+                                   headers=api_headers)
         response_data = response.get_json()
+        # Expected result
+        filtered_comments = [item for item in comments if item['id'] < 2]
+        filtered_comments_params = []
+        for item in filtered_comments:
+            filtered_comments_params.append(
+                remove_params_from_dict(item, ["author_url", "post_url", "upper_comment_url"]))
+
         expected_result = {'success': True,
-                           'number_of_records': 1,
-                           'data': [
-                               {'id': 1,
-                                **change_dict_to_json(comment_first_dict,
-                                                      ["author_url", "post_url", "upper_comment_url"])}
-                           ],
+                           'number_of_records': len(filtered_comments_params),
+                           'data': filtered_comments_params,
                            'pagination': {
                                "current_page_url": "/api/v1/comments/?page=1&params=author_url%2Cpost_url%2Cupper_"
                                                    "comment_url&per_page=1&id%5Blt%5D=2",
-                               "number_of_all_pages": 1,
-                               "number_of_all_records": 1
+                               "number_of_all_pages": len(filtered_comments_params),
+                               "number_of_all_records": len(filtered_comments_params)
                            }}
+        # Tests
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.headers['Content-Type'], 'application/json')
         self.assertDictEqual(expected_result, response_data)
 
+    # Test add_comment
     def test_add_comment(self):
         """Test api for add_comment."""
+        comment_dict = {"post_id": 1, "author_id": 1, "text": "New comment", "parent_comment": 0, "upper_comment": 0}
+        # Add NewsPost to db
         post = NewsPost(author_id=3, title="Post", date=datetime(2020, 5, 25), body="Body of post", img_url="image.jpg")
         db.session.add(post)
         db.session.commit()
-
-        comment_dict = {"post_id": 1, "author_id": 1, "text": "New comment", "parent_comment": 0, "upper_comment": 0}
-
+        # Request
         response = self.client.post(f'/api/v1/comments/', json=comment_dict, headers=self.get_api_headers())
-        del comment_dict["upper_comment"]
         response_data = response.get_json()
+        # Expected result
         expected_result = {'success': True,
-                           'data': {'id': 1, **change_dict_to_json(comment_dict)}
+                           'data': {**change_dict_to_json(comment_dict)}
                            }
+        # Tests
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.headers['Content-Type'], 'application/json')
         self.assertDictEqual(expected_result, response_data)
 
     def test_add_comment_invalid_data(self):
         """Test api for add_comment."""
+        # Add NewsPost to db
         post = NewsPost(author_id=3, title="Post", date=datetime(2020, 5, 25), body="Body of post", img_url="image.jpg")
         db.session.add(post)
         db.session.commit()
-        for comment in make_comment():
+        # Requests with tests
+        for comment in comments_invalid_data:
+            # Request
             response = self.client.post('/api/v1/comments/', json=comment[0], headers=self.get_api_headers())
             response_data = response.get_json()
+            # Tests
             self.assertEqual(response.status_code, 400)
             self.assertFalse(response_data['success'])
             self.assertEqual(response_data['error_value_key'], comment[1])
