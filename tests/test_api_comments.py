@@ -49,13 +49,11 @@ def change_dict_to_json(dict_name):
 
     if "date" in changed_dict:
         changed_dict["id"] = Comment.query.filter_by(post_id=dict_name["post_id"], author_id=dict_name["author_id"],
-                                                     parent_comment=changed_dict["parent_comment"],
-                                                     date=changed_dict["date"]).first().id
+                                                     parent_comment=changed_dict["parent_comment"]).first().id
         changed_dict["date"] = changed_dict["date"].strftime("%d/%m/%Y, %H:%M:%S")
     else:
         changed_dict["id"] = Comment.query.filter_by(post_id=dict_name["post_id"], author_id=dict_name["author_id"],
-                                                     parent_comment=changed_dict["parent_comment"],
-                                                     date=datetime.today()).first().id
+                                                     parent_comment=changed_dict["parent_comment"]).first().id
         changed_dict["date"] = datetime.today().strftime("%d/%m/%Y, %H:%M:%S")
 
     del changed_dict["parent_comment"]
