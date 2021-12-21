@@ -14,9 +14,7 @@ registration_data = [
     ({'name': 'name', 'surname': 'surname', 'password': '123456',
       'email': 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee@test.com',
       'telephone': 1234}, 'email'),
-    ({'name': 'name', 'surname': 'surname', 'password': '123456',
-      'email': 'ee.test.com',
-      'telephone': 1234}, 'email')]
+    ({'name': 'name', 'surname': 'surname', 'password': '123456', 'email': 'ee.test.com', 'telephone': 1234}, 'email')]
 
 login_data = [
     ({'password': '123456'}, 'email'),
@@ -35,35 +33,29 @@ update_credentials_data = [
 data_for_update_invalid_data = [
     ({'name': 'name', 'surname': 'surname', 'email': 'test@test.com', 'password': '123456', 'telephone': 1234},
      'email'),
-    ({'name': 'name', 'surname': 'surname', 'email': 'test2@test.com', 'telephone': 1234},
-     'no_password'),
+    ({'name': 'name', 'surname': 'surname', 'email': 'test2@test.com', 'telephone': 1234}, 'no_password'),
     ({'name': 'name', 'surname': 'surname', 'email': 'test2@test.com', 'password': 'password22', 'telephone': 1234},
      'wrong_password'),
-    ({'name': 'name', 'email': 'test2@test.com', 'password': 'password22', 'new_password': '123'},
-     'password'),
+    ({'name': 'name', 'email': 'test2@test.com', 'password': 'password22', 'new_password': '123'}, 'password'),
     ({'name': 'name', 'surname': 'surname', 'password': 'password',
       'email': 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee@test.com',
       'telephone': 1234}, 'long_email'),
-    ({'name': 'name', 'surname': 'surname', 'password': 'password',
-      'email': 'ee.test.com',
-      'telephone': 1234}, 'wrong_email')
+    ({'name': 'name', 'surname': 'surname', 'password': 'password', 'email': 'ee.test.com', 'telephone': 1234},
+     'wrong_email')
 ]
 
 data_for_update_by_admin_invalid_data = [
     ({'name': 'name', 'surname': 'surname', 'email': 'test@test.com'}, 'no_user_to_edit_id'),
     ({'name': 'name', 'surname': 'surname', 'email': 'test2@test.com', 'telephone': 1234, 'user_to_edit_id': 1.4},
      'user_to_edit_id'),
-    ({'name': 'name', 'surname': 'surname', 'role_id': 4,
-      'user_to_edit_id': User.query.filter_by(email='test@test.com').first().id},
-     'role_id'),
-    ({'name': 'name', 'email': 'test@test.com', 'password': 'password22', 'new_password': '123',
-      'user_to_edit_id': User.query.filter_by(email='test@test.com').first().id}, 'email'),
-    ({'name': 'name', 'surname': 'surname', 'user_to_edit_id': User.query.filter_by(email='test@test.com').first().id,
+    ({'name': 'name', 'surname': 'surname', 'role_id': 4, 'user_to_edit_id': 1}, 'role_id'),
+    ({'name': 'name', 'email': 'test@test.com', 'password': 'password22', 'new_password': '123', 'user_to_edit_id': 1},
+     'email'),
+    ({'name': 'name', 'surname': 'surname', 'user_to_edit_id': 1,
       'email': 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee@test.com',
       'telephone': 1234}, 'long_email'),
-    ({'name': 'name', 'surname': 'surname', 'user_to_edit_id': User.query.filter_by(email='test@test.com').first().id,
-      'email': 'ee.test.com',
-      'telephone': 1234}, 'wrong_email')
+    ({'name': 'name', 'surname': 'surname', 'user_to_edit_id': 1, 'email': 'ee.test.com', 'telephone': 1234},
+     'wrong_email')
 ]
 
 
@@ -205,9 +197,12 @@ class AuthenticationTestCase(unittest.TestCase):
         address = User.query.get(user_to_edit_id).address
         email = User.query.get(user_to_edit_id).email
         telephone = User.query.get(user_to_edit_id).telephone
+        # Headers
         api_headers = self.get_api_headers_admin()
+        # Request
         response = update_user_by_admin_correct_request(self.client, api_headers, user_to_edit_id)
         response_data = response.get_json()
+        # Tests
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.headers['Content-Type'], 'application/json')
         self.assertTrue(response_data['success'])
@@ -220,11 +215,15 @@ class AuthenticationTestCase(unittest.TestCase):
 
     def test_update_user_by_admin_invalid_data(self):
         """Test api for update user by admin, incorrect data."""
+        # Headers
         api_headers = self.get_api_headers_admin()
+        # Requests and tests
         for item in data_for_update_by_admin_invalid_data:
+            # Request
             response = self.client.put('/api/v1/auth/admin/', json=item[0], headers=api_headers,
                                        follow_redirects=True)
             response_data = response.get_json()
+            # Tests
             self.assertEqual(response.headers['Content-Type'], 'application/json')
             self.assertFalse(response_data['success'])
             if item[1] == 'no_user_to_edit_id':
@@ -255,8 +254,10 @@ class AuthenticationTestCase(unittest.TestCase):
     # Testing methods connected with registration
     def test_registration(self):
         """Test api for registration, correct data."""
+        # Headers
         api_headers = self.get_api_headers()
         del api_headers['Authorization']
+        # Request
         response = self.client.post('/api/v1/auth/register/',
                                     json={
                                         'name': 'test',
@@ -266,6 +267,7 @@ class AuthenticationTestCase(unittest.TestCase):
                                         'telephone': '123456789'
                                     }, headers=api_headers)
         response_data = response.get_json()
+        # Tests
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.headers['Content-Type'], 'application/json')
         self.assertTrue(response_data['success'])
@@ -273,8 +275,10 @@ class AuthenticationTestCase(unittest.TestCase):
 
     def test_registration_already_used_email(self):
         """Test api for registration, incorrect data - email is in db."""
+        # Headers
         api_headers = self.get_api_headers()
         del api_headers['Authorization']
+        # Request
         response = self.client.post('/api/v1/auth/register/',
                                     json={
                                         'name': 'test',
@@ -284,6 +288,7 @@ class AuthenticationTestCase(unittest.TestCase):
                                         'telephone': '123456789'
                                     }, headers=api_headers)
         response_data = response.get_json()
+        # Tests
         self.assertEqual(response.status_code, 409)
         self.assertEqual(response.headers['Content-Type'], 'application/json')
         self.assertEqual(response_data['error'], 'conflict')
@@ -292,12 +297,16 @@ class AuthenticationTestCase(unittest.TestCase):
 
     def test_registration_invalid_data(self):
         """Test api for registration, incorrect data."""
+        # Headers
         api_headers = self.get_api_headers()
         del api_headers['Authorization']
+        # Requests and tests
         for item in registration_data:
+            # Request
             response = self.client.post('/api/v1/auth/register/',
                                         json=item[0], headers=api_headers)
             response_data = response.get_json()
+            # Tests
             self.assertEqual(response.status_code, 400)
             self.assertEqual(response.headers['Content-Type'], 'application/json')
             self.assertFalse(response_data['success'])
@@ -323,14 +332,17 @@ class AuthenticationTestCase(unittest.TestCase):
     # Testing methods connected with login
     def test_login(self):
         """Test api for login, correct data."""
+        # Headers
         api_headers = self.get_api_headers()
         del api_headers['Authorization']
+        # Request
         response = self.client.post('/api/v1/auth/login/',
                                     json={
                                         'password': 'password',
                                         'email': 'test@test.com'
                                     }, headers=api_headers)
         response_data = response.get_json()
+        # Tests
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.headers['Content-Type'], 'application/json')
         self.assertTrue(response_data['success'])
@@ -338,12 +350,16 @@ class AuthenticationTestCase(unittest.TestCase):
 
     def test_login_invalid_data(self):
         """Test api for registration, incorrect data."""
+        # Headers
         api_headers = self.get_api_headers()
         del api_headers['Authorization']
+        # Requests and tests
         for item in login_data:
+            # Request
             response = self.client.post('/api/v1/auth/login/',
                                         json=item[0], headers=api_headers)
             response_data = response.get_json()
+            # Tests
             self.assertEqual(response.headers['Content-Type'], 'application/json')
             self.assertFalse(response_data['success'])
             self.assertNotIn('token', response_data)
@@ -363,9 +379,10 @@ class AuthenticationTestCase(unittest.TestCase):
     # Testing methods connected with current user
     def test_get_current_user(self):
         """Test api for current user."""
-        response = self.client.get('/api/v1/auth/about_me/',
-                                   headers=self.get_api_headers())
+        # Request
+        response = self.client.get('/api/v1/auth/about_me/', headers=self.get_api_headers())
         response_data = response.get_json()
+        # Tests
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response_data['success'])
         self.assertEqual(response_data['data']['name'], self.user['name'])
@@ -386,9 +403,11 @@ class AuthenticationTestCase(unittest.TestCase):
 
     # Testing methods connected with updating data
     def test_update_user_data(self):
-        """Test api for updating user, correct data.."""
+        """Test api for updating user, correct data."""
+        # Request
         response = update_user_correct_request(self.client, self.get_api_headers())
         response_data = response.get_json()
+        # Tests
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.headers['Content-Type'], 'application/json')
         self.assertTrue(response_data['success'])
@@ -398,11 +417,14 @@ class AuthenticationTestCase(unittest.TestCase):
         self.assertEqual(response_data['data']['email'], 'test2@test.com')
 
     def test_update_user_invalid_data(self):
-        """Test api for updating user, incorrect data.."""
+        """Test api for updating user, incorrect data."""
+        # Requests and tests
         for item in data_for_update_invalid_data:
+            # Request
             response = self.client.put('/api/v1/auth/user/', json=item[0], headers=self.get_api_headers(),
                                        follow_redirects=True)
             response_data = response.get_json()
+            # Tests
             self.assertEqual(response.headers['Content-Type'], 'application/json')
             self.assertFalse(response_data['success'])
             if item[1] == 'email':
@@ -433,18 +455,22 @@ class AuthenticationTestCase(unittest.TestCase):
 
     def test_update_credentials(self):
         """Test api for update credentials, correct data."""
+        # Request
         response = update_user_credentials_correct_request(self.client, self.get_api_headers())
         response_data = response.get_json()
+        # Tests
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.headers['Content-Type'], 'application/json')
         self.assertTrue(response_data['success'])
 
     def test_update_credentials_invalid_data(self):
         """Test api for update credentials, incorrect data."""
+        # Requests and tests
         for item in update_credentials_data:
-            response = self.client.patch('/api/v1/auth/user/',
-                                         json=item[0], headers=self.get_api_headers())
+            # Request
+            response = self.client.patch('/api/v1/auth/user/', json=item[0], headers=self.get_api_headers())
             response_data = response.get_json()
+            # Tests
             self.assertEqual(response.headers['Content-Type'], 'application/json')
             self.assertFalse(response_data['success'])
             if item[1] == 'no_password':
@@ -467,6 +493,7 @@ class AuthenticationTestCase(unittest.TestCase):
     # Testing methods connected with values of request (content-type, tokens)
     def test_missing_token_value(self):
         """Test if token has no value."""
+        # Headers
         api_headers = self.get_api_headers()
         api_headers['Authorization'] = 'Bearer'
 
@@ -491,6 +518,7 @@ class AuthenticationTestCase(unittest.TestCase):
 
     def test_missing_token_wrong_value(self):
         """Check if token has wrong value"""
+        # Headers
         api_headers = self.get_api_headers()
         api_headers['Authorization'] = 'Bearer token'
 
@@ -515,6 +543,7 @@ class AuthenticationTestCase(unittest.TestCase):
 
     def test_missing_token(self):
         """Check if token exists"""
+        # Headers
         api_headers = self.get_api_headers()
         del api_headers['Authorization']
 
@@ -532,17 +561,20 @@ class AuthenticationTestCase(unittest.TestCase):
 
         # Check for update user data by admin (PUT)
         user_to_edit_id = User.query.filter_by(email='test@test.com').first().id
+        # Headers
         api_headers_admin = self.get_api_headers_admin()
         del api_headers_admin['Authorization']
+        # Request
         response = update_user_by_admin_correct_request(self.client, api_headers_admin, user_to_edit_id)
         check_missing_token(response, self.assertEqual, self.assertFalse, self.assertNotIn)
 
     def test_invalid_content_type(self):
         """Check if content type is 'application/json'"""
+        # Headers
         api_headers = self.get_api_headers()
+        del api_headers['Content-Type']
 
         # Check for PATCH (change credentials)
-        del api_headers['Content-Type']
         response = self.client.patch('/api/v1/auth/user/',
                                      data={
                                          'password': 'password',
@@ -584,8 +616,10 @@ class AuthenticationTestCase(unittest.TestCase):
 
         # Check for update user data by admin (PUT)
         user_to_edit_id = User.query.filter_by(email='test@test.com').first().id
+        # Headers
         api_headers_admin = self.get_api_headers_admin()
         del api_headers_admin['Content-Type']
+        # Request
         response = self.client.put('/api/v1/auth/admin/',
                                    data={
                                        'user_to_edit_id': user_to_edit_id,
