@@ -8,13 +8,11 @@ from tests.api_functions import token, create_user, create_admin, create_moderat
     check_missing_token_wrong_value, check_missing_token, request_with_features, check_content_type, check_permissions
 
 
-def change_dict_to_json(dict_name, params=None):
+def change_dict_to_json(dict_name):
     """Change dict to json format matching the response.
 
     :param dict_name: Name of the dictionary.
     :type dict_name: dict
-    :param params: Parameters not displayed in response.
-    :type params: list
     :return: Changed dict format
     :rtype: dict
     """
@@ -62,7 +60,20 @@ def change_dict_to_json(dict_name, params=None):
         del changed_dict["user_id_rental"]
 
         changed_dict["id"] = {"car": car_id, "from": changed_dict["from_date"][:-3], "user": user_id}
+    return changed_dict
 
+
+def remove_params_from_dict(dict_name, params=None):
+    """Change dict to format matching the response.
+
+    :param dict_name: Name of the dictionary.
+    :type dict_name: dict
+    :param params: Parameters not displayed in response.
+    :type params: list
+    :return: Changed dict
+    :rtype: dict
+    """
+    changed_dict = dict_name.copy()
     if params is not None:
         for param in params:
             del changed_dict[param]
@@ -211,19 +222,29 @@ class RentalsTestCase(unittest.TestCase):
     # Test show_rentals
     def test_show_rentals(self):
         """Test api for show_rentals, valid data."""
+        # Request, no rentals in db
+        # Request
+        response = self.client.get('/api/v1/rentals/', headers=self.get_api_headers_admin())
+        response_data = response.get_json()
+        # Tests
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers['Content-Type'], 'application/json')
+        self.assertTrue(response_data['success'])
+        self.assertEqual(response_data['data'], [])
+
         # Add rentals to db
         make_rentals()
+        # Change dict to json format
+        rentals = []
+        for rental in rentals_data:
+            rental = rental.copy()
+            rentals.append(change_dict_to_json(rental))
 
         # Request
         response = self.client.get('/api/v1/rentals/', headers=self.get_api_headers_admin())
         response_data = response.get_json()
 
         # Expected results
-        rentals = []
-        for rental in rentals_data:
-            rental = rental.copy()
-            rentals.append(change_dict_to_json(rental))
-
         expected_result = {'success': True,
                            'data': rentals
                            }
@@ -233,17 +254,16 @@ class RentalsTestCase(unittest.TestCase):
         self.assertDictEqual(expected_result, response_data)
 
         # Request with features: sort_by, apply_filter
-        response = self.client.get('/api/v1/rentals/', headers=self.get_api_headers_admin())
+        request_features = {'sort_by': 'from_date',
+                            'filters': 'users_id[lt]=2'}
+        response = self.client.get(request_with_features('/api/v1/rentals/', **request_features),
+                                   headers=self.get_api_headers_admin())
         response_data = response.get_json()
-
         # Expected results
-        rentals = []
-        for rental in rentals_data:
-            rental = rental.copy()
-            rentals.append(change_dict_to_json(rental))
-
+        filtered_rentals = [item for item in rentals if item['id']['user'] < 2]
+        filtered_rentals_sorted = sorted(filtered_rentals, key=lambda item: item['from_date'])
         expected_result = {'success': True,
-                           'data': rentals
+                           'data': filtered_rentals_sorted
                            }
         # Tests
         self.assertEqual(response.status_code, 200)
@@ -254,27 +274,36 @@ class RentalsTestCase(unittest.TestCase):
     def test_show_rental(self):
         """Test api for show_rental."""
         # No rentals
+        # Request
         response = self.client.get('/api/v1/rentals/car1/user1/from202002022145/', headers=self.get_api_headers_admin())
         response_data = response.get_json()
+        # Tests
         self.assertEqual(response.status_code, 404)
         self.assertFalse(response_data["success"])
         self.assertEqual(response_data["error"], "Rental not found")
 
         # Add rentals to db
         make_rentals()
+        # Change dict to json format
+        rentals = []
+        for rental in rentals_data:
+            rental = rental.copy()
+            rentals.append(change_dict_to_json(rental))
+
         rental = Rental.query.all()[0]
         rental_from = rental.from_date.strftime("%Y%m%d%H%M")
+
+        filtered_rental = [item for item in rentals if
+                           item["id"]["car"] == rental.cars_id and item["id"]["user"] == rental.users_id and item[
+                               "from_date"] == rental.from_date.strftime("%d/%m/%Y, %H:%M:%S")][0]
 
         # Request without params
         response = self.client.get(f'/api/v1/rentals/car{rental.cars_id}/user{rental.users_id}/from{rental_from}/',
                                    headers=self.get_api_headers_admin())
         response_data = response.get_json()
-
         # Expected results
-        rental_data = rentals_data[0].copy()
-
         expected_result = {'success': True,
-                           'data': change_dict_to_json(rental_data)
+                           'data': filtered_rental
                            }
         # Tests
         self.assertEqual(response.status_code, 200)
@@ -282,16 +311,15 @@ class RentalsTestCase(unittest.TestCase):
         self.assertDictEqual(expected_result, response_data)
 
         # Request with params
+        # Request
+        request_features = {'params': 'id,user_url,available_from'}
         response = self.client.get(
             request_with_features(url=f'/api/v1/rentals/car{rental.cars_id}/user{rental.users_id}/from{rental_from}/',
-                                  params="id,user_url,available_from"), headers=self.get_api_headers_admin())
+                                  **request_features), headers=self.get_api_headers_admin())
         response_data = response.get_json()
-
         # Expected results
-        rental = rentals_data[0].copy()
-
         expected_result = {'success': True,
-                           'data': change_dict_to_json(rental, ["id", "user_url", "available_from"])
+                           'data': remove_params_from_dict(filtered_rental, ["id", "user_url", "available_from"])
                            }
         # Tests
         self.assertEqual(response.status_code, 200)
@@ -310,10 +338,9 @@ class RentalsTestCase(unittest.TestCase):
 
         # Requests
         for item in invalid_data:
-            response = self.client.get(
-                request_with_features(
-                    url=f'/api/v1/rentals/car{rental.cars_id}/user{rental.users_id}/from{item[0]}/',
-                    params="id,user_url,available_from"), headers=self.get_api_headers_admin())
+            # Request
+            response = self.client.get(f'/api/v1/rentals/car{rental.cars_id}/user{rental.users_id}/from{item[0]}/',
+                                       headers=self.get_api_headers_admin())
             response_data = response.get_json()
 
             # Tests
@@ -331,28 +358,24 @@ class RentalsTestCase(unittest.TestCase):
     def test_add_rental(self):
         """Test api for add_rental."""
         user_id = User.query.filter_by(email="test@test.com").first().id
+
         # Test admin
         # Data
         rental_data = {"car_id": 1, "from_date": int((datetime.now() + timedelta(minutes=30)).strftime('%Y%m%d%H%M')),
                        "to_date": int((datetime.now() + timedelta(hours=1)).strftime('%Y%m%d%H%M'))}
 
         available = datetime.strptime(str(rental_data["to_date"]), '%Y%m%d%H%M') + timedelta(hours=1)
-
         # Expected results
         rental = rental_data.copy()
         rental["available"] = available
         rental["user_id_rental"] = user_id
-
         expected_result = {'success': True,
                            'data': change_dict_to_json(rental)
                            }
-
         # Request
-        response = self.client.post('/api/v1/rentals/',
-                                    json={"user_id_rental": user_id, **rental_data},
+        response = self.client.post('/api/v1/rentals/', json={"user_id_rental": user_id, **rental_data},
                                     headers=self.get_api_headers_admin())
         response_data = response.get_json()
-
         # Tests
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.headers['Content-Type'], 'application/json')
@@ -362,23 +385,17 @@ class RentalsTestCase(unittest.TestCase):
         # Data
         rental_data = {"car_id": 1, "from_date": int((datetime.now() + timedelta(hours=4)).strftime('%Y%m%d%H%M')),
                        "to_date": int((datetime.now() + timedelta(hours=5)).strftime('%Y%m%d%H%M'))}
-
         available = datetime.strptime(str(rental_data["to_date"]), '%Y%m%d%H%M') + timedelta(hours=1)
-
         # Expected results
         rental = rental_data.copy()
         rental["available"] = available
         rental["user_id_rental"] = user_id
-
         expected_result = {'success': True,
                            'data': change_dict_to_json(rental)
                            }
         # Request
-        response = self.client.post('/api/v1/rentals/',
-                                    json={**rental_data},
-                                    headers=self.get_api_headers())
+        response = self.client.post('/api/v1/rentals/', json={**rental_data}, headers=self.get_api_headers())
         response_data = response.get_json()
-
         # Tests
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.headers['Content-Type'], 'application/json')
