@@ -1,9 +1,68 @@
 """This module stores tests for API - users module."""
 import unittest
 from app import create_app, db
-from app.models import Role, User
+from app.models import Role, User, NewsPost, Rental, Opinion, Comment
 from tests.api_functions import token, create_user, create_admin, create_moderator, check_missing_token_value, \
     check_permissions, check_missing_token_wrong_value, check_missing_token, request_with_features
+
+users_data = [{'email': 'user1@example.com', 'name': 'user1_name', 'surname': 'user1_surname', 'telephone': 123,
+               'password': 'password', 'role_id': 1, 'address': None},
+              {'email': 'user2@example.com', 'name': 'user2_name', 'surname': 'user2_surname', 'telephone': 123,
+               'password': 'password2', 'role_id': 2, 'address': None}
+              ]
+
+
+def make_users():
+    """Function that adds users to db."""
+    for item in users_data:
+        user = User(**item)
+        db.session.add(user)
+        db.session.commit()
+        if item["role_id"] != 1:
+            user.role_id = item["role_id"]
+            db.session.commit()
+
+
+def change_dict_to_json(dict_name):
+    """Change dict to json format matching the response.
+
+    :param dict_name: Name of the dictionary.
+    :type dict_name: dict
+    :return: Changed dict format
+    :rtype: dict
+    """
+    if "address" not in dict_name:
+        dict_name["address"] = None
+    if 'role_id' not in dict_name:
+        dict_name["role_id"] = User.query.filter_by(email=dict_name['email']).first().role_id
+    dict_name["id"] = User.query.filter_by(email=dict_name['email']).first().id
+    dict_name["posts"] = NewsPost.query.filter_by(author_id=dict_name["id"]).all()
+    dict_name["post_number"] = len(dict_name["posts"])
+    dict_name["opinions"] = Opinion.query.filter_by(author_id=dict_name["id"]).all()
+    dict_name["opinions_number"] = len(dict_name["opinions"])
+    dict_name["rentals"] = Rental.query.filter_by(users_id=dict_name["id"]).all()
+    dict_name["rentals_number"] = len(dict_name["rentals"])
+    dict_name["comments"] = Comment.query.filter_by(author_id=dict_name["id"]).all()
+    dict_name["comments_number"] = len(dict_name["opinions"])
+    del dict_name["password"]
+    return dict_name
+
+
+def remove_params_from_dict(dict_name, params=None):
+    """Change dict to format matching the response.
+
+    :param dict_name: Name of the dictionary.
+    :type dict_name: dict
+    :param params: Parameters not displayed in response.
+    :type params: list
+    :return: Changed dict
+    :rtype: dict
+    """
+    changed_dict = dict_name.copy()
+    if params is not None:
+        for param in params:
+            del changed_dict[param]
+    return changed_dict
 
 
 def show_user_correct_request(client, user_id, api_headers):
@@ -84,180 +143,131 @@ class UsersTestCase(unittest.TestCase):
             'Content-Type': 'application/json'
         }
 
+    # Test get_user
     def test_get_user(self):
         """Test api for get_user, correct data."""
-        user_dict = {
-            'email': 'user1@example.com', 'name': 'user1_name', 'surname': 'user1_surname', 'telephone': 123,
-            'password': 'password', 'role_id': 1, 'address': None
-        }
-        user = User(**user_dict)
-        db.session.add(user)
-        db.session.commit()
+        user_id = 4
+        # Test request without features, no users in db
+        # Request
+        response = show_user_correct_request(self.client, user_id, self.get_api_headers_admin())
+        response_data = response.get_json()
+        # Tests
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.headers['Content-Type'], 'application/json')
+        self.assertEqual(response_data['error'], f'User with id {user_id} not found')
+        self.assertFalse(response_data['success'])
 
-        del user_dict['password']
+        # Add users to db
+        make_users()
+
+        # Change dict to json format
+        users = [self.user, self.user_moderator, self.user_admin]
+        for item in users_data:
+            users.append(item.copy())
+        for user in users:
+            change_dict_to_json(user)
+        users = sorted(users, key=lambda users_item: users_item['id'])
 
         # Test request without features
-        response = show_user_correct_request(self.client, user.id, self.get_api_headers_admin())
+        # Request
+        response = show_user_correct_request(self.client, user_id, self.get_api_headers_admin())
         response_data = response.get_json()
+        # Expected result
+        filtered_user = [item for item in users if item['id'] == user_id][0]
+        expected_result = {'success': True,
+                           'data': {**filtered_user}}
+        # Tests
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.headers['Content-Type'], 'application/json')
-        expected_result = {'success': True,
-                           'data': {**user_dict,
-                                    'id': 4,
-                                    'post_number': 0,
-                                    'posts': [],
-                                    'rentals_number': 0,
-                                    'rentals': [],
-                                    'comments_number': 0,
-                                    'comments': [],
-                                    'opinions_number': 0,
-                                    'opinions': []
-                                    }}
-
         self.assertDictEqual(expected_result, response_data)
 
         # Test request with features: params
-        response = self.client.get('/api/v1/users/{}/?params=comments,comments_number'.format(user.id),
+        request_features = {'params': 'comments,comments_number'}
+        response = self.client.get(request_with_features(f'/api/v1/users/{user_id}/', **request_features),
                                    headers=self.get_api_headers_admin(), follow_redirects=True)
         response_data = response.get_json()
+        # Expected result
+        expected_result = {'success': True,
+                           'data': remove_params_from_dict(filtered_user, ["comments", "comments_number"])
+                           }
+        # Tests
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.headers['Content-Type'], 'application/json')
-        expected_result = {'success': True,
-                           'data': {**user_dict,
-                                    'id': 4,
-                                    'post_number': 0,
-                                    'posts': [],
-                                    'rentals_number': 0,
-                                    'rentals': [],
-                                    'opinions_number': 0,
-                                    'opinions': []
-                                    }}
-
         self.assertDictEqual(expected_result, response_data)
 
     def test_get_user_invalid_data(self):
         """Test api for get_user."""
-        user_dict = {
-            'email': 'user1@example.com', 'name': 'user1_name', 'surname': 'user1_surname', 'telephone': 123,
-            'password': 'password', 'role_id': 1, 'address': None
-        }
-        user = User(**user_dict)
-        db.session.add(user)
-        db.session.commit()
-
-        del user_dict['password']
-
-        # Test request with features: params
-        response = self.client.get('/api/v1/users/{}/?params=commentscomments_number'.format(user.id),
-                                   headers=self.get_api_headers_admin(), follow_redirects=True)
+        # Test request without features
+        response = self.client.get('/api/v1/users/user_id/', headers=self.get_api_headers_admin(),
+                                   follow_redirects=True)
         response_data = response.get_json()
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.headers['Content-Type'], 'application/json')
-        expected_result = {'success': True,
-                           'data': {**user_dict,
-                                    'id': 4,
-                                    'post_number': 0,
-                                    'posts': [],
-                                    'rentals_number': 0,
-                                    'rentals': [],
-                                    'comments_number': 0,
-                                    'comments': [],
-                                    'opinions_number': 0,
-                                    'opinions': []
-                                    }}
-
-        self.assertDictEqual(expected_result, response_data)
-
-        # Test request with wrong user_id
-        all_ids = [id_value.id for id_value in User.query.all()]
-        user_id = max(all_ids) + 1
-        response = show_user_correct_request(self.client, user_id, self.get_api_headers_admin())
-        response_data = response.get_json()
+        # Tests
         self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.headers['Content-Type'], 'application/json')
         self.assertFalse(response_data['success'])
-        self.assertIn(str(user_id), response_data['error'], 'bad request')
+        self.assertEqual(response_data['error'], 'not found')
 
+    # Test get_all_users
     def test_get_all_users(self):
         """Test api for get_all_users with sorting, filtering records, correct data."""
-        user_first_dict = {
-            'email': 'user1@example.com', 'name': 'user1_name', 'surname': 'user1_surname', 'telephone': 123,
-            'password': 'password', 'role_id': 1, 'address': None
-        }
-        user_first = User(**user_first_dict)
-        user_second_dict = {
-            'email': 'user2@example.com', 'name': 'user2_name', 'surname': 'user2_surname', 'telephone': 123,
-            'password': 'password2', 'role_id': 2, 'address': None
-        }
-        user_second = User(**user_second_dict)
-        db.session.add_all([user_first, user_second])
-        db.session.commit()
-        user_second.role_id = 2
-        db.session.commit()
-
-        user = self.user
-        moderator = self.user_moderator
-        admin = self.user_admin
-
-        del user_first_dict['password']
-        del user_second_dict['password']
-        del user['password']
-        del moderator['password']
-        del admin['password']
-
-        user['role_id'] = User.query.filter_by(email=self.user['email']).first().role_id
-        moderator['role_id'] = User.query.filter_by(email=self.user_moderator['email']).first().role_id
-        admin['role_id'] = User.query.filter_by(email=self.user_admin['email']).first().role_id
-
-        user['address'] = None
-        moderator['address'] = None
-        admin['address'] = None
+        # Add users to db
+        make_users()
+        # Change dict to json format
+        users = [self.user, self.user_moderator, self.user_admin]
+        for item in users_data:
+            users.append(item.copy())
+        for user in users:
+            change_dict_to_json(user)
+        users = sorted(users, key=lambda users_item: users_item['id'])
 
         # Test request without features
         response = self.client.get(request_with_features(url='/api/v1/users/'), headers=self.get_api_headers_admin(),
                                    follow_redirects=True)
-        users_data = {
-            'post_number': 0,
-            'posts': [],
-            'rentals_number': 0,
-            'rentals': [],
-            'comments_number': 0,
-            'comments': [],
-            'opinions_number': 0,
-            'opinions': []
-        }
-
-        expected_result = {'success': True,
-                           'number_of_records': 5,
-                           'data': [
-                               {**user, 'id': User.query.filter_by(email=self.user['email']).first().id, **users_data},
-                               {**moderator, 'id': User.query.filter_by(email=self.user_moderator['email']).first().id,
-                                **users_data},
-                               {**admin, 'id': User.query.filter_by(email=self.user_admin['email']).first().id,
-                                **users_data},
-                               {**user_first_dict, 'id': 4, **users_data},
-                               {**user_second_dict, 'id': 5, **users_data}
-                           ]
-                           }
         response_data = response.get_json()
+        # Expected result
+        expected_result = {'success': True,
+                           'number_of_records': len(users),
+                           'data': users
+                           }
+        # Tests
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers['Content-Type'], 'application/json')
         self.assertDictEqual(expected_result, response_data)
 
         # Test request with features
-        response = self.client.get(request_with_features(
-            url='/api/v1/users/', sort_by="-id",
-            params="comments,comments_number,opinions,opinions_number,posts,post_number",
-            filters="id[gte]=4&id[lte]=5"),
-            headers=self.get_api_headers_admin(), follow_redirects=True)
+        request_features = {'sort_by': '-id',
+                            'per_page': '1',
+                            'filters': 'id[gte]=4&id[lte]=5',
+                            'params': 'comments,comments_number,opinions,opinions_number,posts,post_number'}
+        response = self.client.get(request_with_features(url='/api/v1/users/', **request_features),
+                                   headers=self.get_api_headers_admin(), follow_redirects=True)
         response_data = response.get_json()
+        # Expected results
+        filtered_users = [item for item in users if item['id'] == 4 or item['id'] == 5]
+        filtered_users_sorted = sorted(filtered_users, key=lambda item: item['id'], reverse=True)
+        filtered_users_sorted_without_params = []
+
+        for item in filtered_users_sorted:
+            filtered_users_sorted_without_params.append(
+                remove_params_from_dict(item, ["comments", "comments_number", "opinions", "opinions_number", "posts",
+                                               "post_number"]))
+        expected_result = {
+            'data': filtered_users_sorted_without_params[:1],
+            'number_of_records': 1,
+            'pagination': {
+                'current_page_url': '/api/v1/users/?page=1&sort=-id&params=comments%2Ccomments_number%2C'
+                                    'opinions%2Copinions_number%2Cposts%2Cpost_number&per_page=1&id%5B'
+                                    'gte%5D=4&id%5Blte%5D=5',
+                'next_page': '/api/v1/users/?page=2&sort=-id&params=comments%2Ccomments_number%2C'
+                             'opinions%2Copinions_number%2Cposts%2Cpost_number&per_page=1&id%5Bgte%5D=4&'
+                             'id%5Blte%5D=5',
+                'number_of_all_pages': len(filtered_users_sorted_without_params),
+                'number_of_all_records': len(filtered_users_sorted_without_params)},
+            'success': True}
+
+        # Tests
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.headers['Content-Type'], 'application/json')
-
-        expected_result = {'success': True,
-                           'number_of_records': 2,
-                           'data': [
-                               {**user_second_dict, 'id': 5, 'rentals': [], 'rentals_number': 0},
-                               {**user_first_dict, 'id': 4, 'rentals': [], 'rentals_number': 0}
-                           ]
-                           }
         self.assertDictEqual(expected_result, response_data)
 
     # Test permissions
