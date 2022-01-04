@@ -46,7 +46,7 @@ def contact():
 
 @main.route("/cars", methods=['GET'])
 def show_models():
-    car_models = Car.query.all()
+    car_models = Car.query.order_by(Car.name).all()
     number_of_car_models = len(car_models)
     return render_template("cars.html", current_user=current_user, all_cars=car_models, car_number=number_of_car_models,
                            permission=Permission.WRITE)
