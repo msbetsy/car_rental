@@ -43,7 +43,7 @@
                 {% else %}
                 <div class="reply">
 
-                    <button id="replybutton" onclick="replybutton()" type="button" class="btn btn-secondary btn-sm">
+                    <button id="replybutton" onclick="replybutton(this)" type="button" class="btn btn-secondary btn-sm">
                         Reply
                     </button>
                     <div id="replyform" style="display:none">
@@ -72,17 +72,17 @@
                         </span>
                     </div>
                 </div>
-                <script>
-                function replybutton() {
-                document.getElementById("replyform").style.display = "block";
-                document.getElementById("replybutton").style.display = "none";
-                };
-                </script>
             </div>
             {% endif %}
         </li>
         {% endfor %}
     </ul>
 </div>
+<script>
+function replybutton(btn) {
+  btn.nextElementSibling.style.display = "block";
+  btn.style.display = "none"
+  }
+</script>
 
 {% endblock %}
