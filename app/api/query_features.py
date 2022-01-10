@@ -142,18 +142,19 @@ def apply_args_filter(list_to_filter):
     :return: filtered list
     :rtype: list
     """
-    for filter_by, value in request.args.items():
-        filtered_list = []
-        if '_number' in filter_by:
-            sign = "="
-            match = SIGNS_REGEX.match(filter_by)
-            if match:
-                filter_by, sign = match.groups()
-            if sign != 'like' and filter_by in list_to_filter[0].keys():
-                for list_item in list_to_filter:
-                    if _get_filter_list(list_item[filter_by], sign, int(value)):
-                        filtered_list.append(list_item)
-                list_to_filter = filtered_list
+    if request.args.get('per_page') is None:
+        for filter_by, value in request.args.items():
+            filtered_list = []
+            if '_number' in filter_by:
+                sign = "="
+                match = SIGNS_REGEX.match(filter_by)
+                if match:
+                    filter_by, sign = match.groups()
+                if sign != 'like' and filter_by in list_to_filter[0].keys():
+                    for list_item in list_to_filter:
+                        if _get_filter_list(list_item[filter_by], sign, int(value)):
+                            filtered_list.append(list_item)
+                    list_to_filter = filtered_list
 
     return list_to_filter
 
