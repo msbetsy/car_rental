@@ -25,7 +25,6 @@
       * [News Post](#news-post)
 * [Setup](#setup)
 * [Usage](#usage)
-* [Technologies](#technologies)
 
 ## General info
 This project provides a simple Web App for a fake wedding car rental company - Carcall.
